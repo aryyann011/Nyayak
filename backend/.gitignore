@@ -1,0 +1,70 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+.env
+.env.local
+.env.*.local
+
+# Project specific
+faiss_index/
+*.pth
+*.bin
+*.safetensors
+models/
+cache/
+tmp/
+temp/
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Large binary files (HF models)
+*.tar.gz
+*.tar
+
+# Development
+.ipynb_checkpoints/
+*.ipynb

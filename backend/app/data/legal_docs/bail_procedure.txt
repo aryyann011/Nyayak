@@ -1,0 +1,27 @@
+Bail Procedure in Criminal Cases
+
+Bail is the temporary release of an accused person from custody, pending trial.
+
+Types of Bail:
+1. Regular Bail – Granted after arrest.
+2. Anticipatory Bail – Applied before arrest under Section 438 CrPC.
+3. Interim Bail – Temporary bail for short duration.
+4. Default Bail – Granted when investigation is not completed within statutory time.
+
+Steps to Apply for Bail:
+1. Hire a lawyer.
+2. File bail application in appropriate court.
+3. Court hears both prosecution and defense.
+4. Judge decides based on seriousness of offense and evidence.
+
+Factors Considered by Court:
+- Nature and gravity of offense.
+- Criminal history of accused.
+- Risk of fleeing.
+- Possibility of tampering with evidence.
+
+If Bail Is Rejected:
+- Accused may approach higher court.
+
+In bailable offenses, bail is a right.
+In non-bailable offenses, bail depends on court discretion.
