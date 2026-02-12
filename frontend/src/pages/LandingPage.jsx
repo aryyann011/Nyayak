@@ -5,7 +5,7 @@ import LegalBentoGrid from '../components/LegalBentoGrid'; // Import the new gri
 import Footer from '../components/Footer';
 import { useTheme } from '../context/themeContext';
 
-const scalesBgUrl = "https://png.pngtree.com/png-vector/20230906/ourmid/pngtree-justice-scales-law-png-image_10005989.png";
+const scalesBgUrl = "/scale.png";
 
 const LandingPage = () => {
   const { isDark } = useTheme();
@@ -38,11 +38,25 @@ const LandingPage = () => {
               Trusted by Public Safety Departments
             </p>
             {/* ... Trust Logos Code (Keep what you have) ... */}
-            <div className="flex flex-wrap justify-center items-center gap-16 grayscale opacity-60">
-               <span className="font-serif font-bold text-2xl">Delhi Police</span>
-               <span className="font-serif font-bold text-2xl">Bar Council</span>
-               <span className="font-serif font-bold text-2xl">NITI Aayog</span>
+            <div className="flex flex-wrap justify-center items-center gap-16 opacity-60">
+  
+            <div className="flex flex-col items-center">
+                <img src="/delhi.png" alt="Delhi Police" className="h-16 mb-2" />
+                <span className="font-serif font-bold text-2xl">Delhi Police</span>
             </div>
+
+            <div className="flex flex-col items-center">
+                <img src="/barcouncil.png" alt="Bar Council" className="h-16 mb-2" />
+                <span className="font-serif font-bold text-2xl">Bar Council</span>
+            </div>
+
+            <div className="flex flex-col items-center">
+                <img src="/niti.jpeg" alt="NITI Aayog" className="h-16 mb-2" />
+                <span className="font-serif font-bold text-2xl">NITI Aayog</span>
+            </div>
+
+            </div>
+
           </div>
         </div>
 

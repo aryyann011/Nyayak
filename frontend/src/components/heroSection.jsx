@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Scale, ArrowRight } from 'lucide-react';
 import { useTheme } from '../context/themeContext';
-import FeatureGrid from './FeatureGrid'; // Import the new component
+// import FeatureGrid from './FeatureGrid'; // Import the new component
 
 const HeroSection = () => {
   const { isDark } = useTheme();
