@@ -6,6 +6,7 @@ import { useTheme } from '../context/themeContext';
 
 const Navbar = () => {
   const { isDark, toggleTheme } = useTheme();
+  
 
   return (
     <motion.div 

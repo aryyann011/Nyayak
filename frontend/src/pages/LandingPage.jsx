@@ -4,6 +4,8 @@ import HeroSection from '../components/heroSection';
 import LegalBentoGrid from '../components/LegalBentoGrid'; // Import the new grid
 import Footer from '../components/Footer';
 import { useTheme } from '../context/themeContext';
+import { useNavigate } from "react-router-dom";
+
 
 const scalesBgUrl = "/scale.png";
 

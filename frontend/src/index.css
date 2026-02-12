@@ -31,3 +31,163 @@
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background: linear-gradient(180deg, #f5e8d8 0%, #f1e3d1 100%);
+  color: #2c2c2c;
+}
+
+.dashboard {
+  padding: 40px 80px;
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+}
+
+/* NAV */
+.topnav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  margin-bottom: 40px;
+}
+
+.logo span {
+  color: #ff7a00;
+  font-weight: 700;
+}
+
+.navlinks a {
+  margin: 0 20px;
+  cursor: pointer;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile img {
+  border-radius: 50%;
+}
+
+/* HERO */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 60px;
+}
+
+.hero-left {
+  width: 55%;
+}
+
+.hero-left span {
+  color: #e85d04;
+}
+
+.searchbar {
+  display: flex;
+  margin-top: 20px;
+  padding: 10px;
+}
+
+.searchbar input {
+  border: none;
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  outline: none;
+}
+
+.searchbar button {
+  background: #ff7a00;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+}
+
+.hero-right {
+  position: relative;
+}
+
+.assistant-card {
+  padding: 20px;
+  width: 280px;
+  margin-bottom: 20px;
+}
+
+.assistant-img {
+  width: 250px;
+}
+
+/* FEATURES */
+.features {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+  margin-bottom: 60px;
+}
+
+.feature-card {
+  padding: 30px;
+}
+
+.feature-card button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  border-radius: 50px;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.btn-orange { background: linear-gradient(90deg, #ff5e00, #ff9500); }
+.btn-yellow { background: linear-gradient(90deg, #ffb703, #ff9500); }
+.btn-blue { background: linear-gradient(90deg, #4361ee, #4895ef); }
+.btn-green { background: linear-gradient(90deg, #2a9d8f, #52b788); }
+
+/* CASES + MAP */
+.cases-map {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 60px;
+}
+
+.cases, .map {
+  padding: 30px;
+}
+
+.map-box {
+  height: 300px;
+  background: #e9dccb;
+  border-radius: 20px;
+  margin-top: 20px;
+}
+
+/* HELP */
+.help {
+  padding: 30px;
+}
+
+.help-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.big {
+  padding: 15px 40px;
+  font-size: 18px;
+}
