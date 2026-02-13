@@ -14,6 +14,14 @@ Important Points:
 - Citizen has the right to receive a copy of the FIR free of cost.
 - FIR can be filed by the victim or any witness.
 
+DATA FIELDS IN IF1:
+- Field 1: District, Police Station (P.S.), Year, FIR Number, and Date.
+- Field 2: List of Acts and specific Sections violated.
+- Field 3a: Occurrence of Offense (Day, Date, and Time range).
+- Field 3b: Time when information was officially received at the P.S.
+- Field 5: Place of Occurrence including address and distance/direction from the P.S.
+- Field 6: Full details of the Complainant/Informant (Name, Father's Name, Nationality).
+
 If Police Refuse to Register FIR:
 - Approach the Superintendent of Police under Section 154(3) CrPC.
 - Send complaint via registered post.

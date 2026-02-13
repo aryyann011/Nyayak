@@ -129,12 +129,53 @@ def retrieve_faiss_context(query: str, k: int = 3):
 # MAIN RAG FUNCTION
 # ==========================================
 def ask_question_with_doc(query: str, uploaded_input: str = None):
+    """
+    Main RAG pipeline with Guardrails, Context Retrieval, and Dynamic Length Control.
+    """
+    query_clean = query.strip().lower()
 
+    # ==========================================
+    # 1️⃣ Basic Guardrails (Fast exits)
+    # ==========================================
+    greetings = ["hello", "hi", "hey", "good morning", "good evening", "namaste"]
+    thanks = ["thanks", "thank you", "shukriya"]
+
+    if query_clean in greetings:
+        return {
+            "answer": "Hello! I am NyaySetu AI. How can I assist you with your legal question today?",
+            "sources": [],
+            "confidence": 100,
+            "disclaimer": ""
+        }
+
+    if len(query_clean) < 3:
+        return {
+            "answer": "I'm sorry, I didn't quite catch that. Could you please provide more details about your legal query?",
+            "sources": [],
+            "confidence": 100,
+            "disclaimer": ""
+        }
+
+    if any(word in query_clean for word in thanks):
+        return {
+            "answer": "You're very welcome! Feel free to ask if you have any more legal questions.",
+            "sources": [],
+            "confidence": 100,
+            "disclaimer": ""
+        }
+
+    # Normalize specific common vague queries
+    if "what if i arrest" in query_clean or "arrest" in query_clean and len(query_clean.split()) < 5:
+        query = "What should I do if I am arrested in India and what are my basic rights?"
+
+    # ==========================================
+    # 2️⃣ Context Retrieval
+    # ==========================================
     uploaded_text = extract_text(uploaded_input)
     legal_term_context = get_legal_term_context(query)
     faiss_texts, sources = retrieve_faiss_context(query)
 
-    context_parts: List[str] = []
+    context_parts = []
 
     if uploaded_text.strip():
         context_parts.append("[UPLOADED DOCUMENT]\n" + uploaded_text[:1500])
@@ -143,59 +184,63 @@ def ask_question_with_doc(query: str, uploaded_input: str = None):
         context_parts.append("[LEGAL DEFINITIONS]\n" + legal_term_context)
 
     if faiss_texts:
-        context_parts.append("[LEGAL PROCEDURES]\n" +
-                             "\n".join(text[:800] for text in faiss_texts))
+        context_parts.append("[LEGAL PROCEDURES]\n" + "\n".join(text[:800] for text in faiss_texts))
 
-    context = "\n\n".join(context_parts) if context_parts else "No legal documents retrieved."
+    context = "\n\n".join(context_parts) if context_parts else "No specific legal documents retrieved."
 
-    system_prompt = """
+    # ==========================================
+    # 3️⃣ Dynamic Length Control
+    # ==========================================
+    word_count = len(query.split())
+    if word_count <= 5:
+        max_tokens = 150
+    elif word_count <= 15:
+        max_tokens = 250
+    else:
+        max_tokens = 450
 
-You are a professional Indian legal assistant.
-
+    # ==========================================
+    # 4️⃣ LLM Prompting & Generation
+    # ==========================================
+    system_prompt = """You are a professional Indian legal assistant. 
 Guidelines:
-- Use simple and clear language.
-- Provide practical, step-by-step guidance in paragraph form.
-- Do not sound robotic or overly technical.
-- Do not give illegal or harmful advice.
-- Keep the answer calm, balanced, and realistic.
--if the ans is not clear, ask for more information instead of guessing.
--If the question is simple, respond briefly (2–3 sentences).
-- If necessary, recommend consulting a lawyer.
--Answer based on the complexity of the question.
--Use simple, practical language.
+- Answer based on the complexity of the question.
+- Use simple and practical language.
+- If the question is simple, respond briefly (2–3 sentences).
+- Provide moderate detail only when necessary.
+- Do not hallucinate laws; if unsure, advise consulting a lawyer.
+- Mention specific sections like CrPC or IPC only if they are in the context."""
 
-
-"""
-
-    prompt = f"""<|system|>
-{system_prompt}</s>
-<|user|>
-{context}
-
-Question: {query}</s>
-<|assistant|>
-"""
+    prompt = f"<|system|>\n{system_prompt}</s>\n<|user|>\nContext: {context}\n\nQuestion: {query}</s>\n<|assistant|>\n"
 
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
 
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
-            max_new_tokens=500,
-            temperature=0,
-            top_p=0.2,
+            max_new_tokens=max_tokens,
+            temperature=0.3,
+            top_p=0.85,
             repetition_penalty=1.15,
             eos_token_id=tokenizer.eos_token_id
         )
 
     generated = outputs[0][inputs["input_ids"].shape[-1]:]
-    answer = tokenizer.decode(generated, skip_special_tokens=True)
+    answer = tokenizer.decode(generated, skip_special_tokens=True).strip()
 
-    # Clean output
+    # ==========================================
+    # 5️⃣ Clean Output
+    # ==========================================
+    # We remove bolding and clean spacing to fit your "flowing paragraph" requirement
     answer = re.sub(r"\*\*.*?\*\*", "", answer)
     answer = re.sub(r"\s+", " ", answer).strip()
 
-    # Confidence Logic
+    if not answer or len(answer) < 10:
+        answer = "I am unable to provide a specific legal answer based on the current context. Please provide more details or consult a legal professional."
+
+    # ==========================================
+    # 6️⃣ Confidence & Return
+    # ==========================================
     if faiss_texts:
         confidence = 90
     elif legal_term_context:
@@ -205,7 +250,6 @@ Question: {query}</s>
 
     return {
         "answer": answer,
-        "sources": sources,
-        "disclaimer": "This AI-generated response is for informational purposes only. Consult a qualified lawyer for legal advice.",
+        "disclaimer": "This is an AI-generated informational response based on Indian Law. It is not legal advice.",
         "confidence": confidence
     }
