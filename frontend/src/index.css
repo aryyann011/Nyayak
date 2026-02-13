@@ -9,6 +9,8 @@
   font-family: 'Inter', sans-serif;
 }
 
+@variant dark (&:where(.dark, .dark *));
+
 @layer utilities {
   .animate-scroll-left {
     animation: scroll-left var(--animation-duration, 40s) linear infinite;
