@@ -101,7 +101,7 @@ const AIFeatureCard = ({ isDark }) => {
       transition={{ duration: 0.8, delay: 0.5 }}
       className={`w-full max-w-4xl p-1 rounded-[2.5rem] bg-gradient-to-br shadow-2xl z-20 ${isDark ? 'from-white/10 to-white/0 shadow-orange-900/20' : 'from-white/60 to-white/20 shadow-orange-500/10'}`}
     >
-      <div className={`rounded-[2.4rem] overflow-hidden border backdrop-blur-xl h-[450px] flex flex-col ${isDark ? 'bg-[#0F172A]/80 border-white/10' : 'bg-white/60 border-white/50'}`}>
+      <div className={`rounded-[2.4rem] overflow-hidden border backdrop-blur-xl h-[450.1px] flex flex-col ${isDark ? 'bg-[#0F172A]/80 border-white/10' : 'bg-white/60 border-white/50'}`}>
         {/* Chat Header */}
         <div className={`p-5 border-b flex items-center justify-between ${isDark ? 'border-white/10 bg-white/5' : 'border-black/5 bg-white/40'}`}>
           <div className="flex items-center gap-3">
