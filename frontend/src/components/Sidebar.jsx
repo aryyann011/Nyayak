@@ -1,101 +1,95 @@
 import React from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { 
+  LogOut,
+  Scale,
+  ChevronLeft,
+  ChevronRight,
   LayoutDashboard, 
   FileText, 
   ShieldAlert, 
   Map, 
-  MessageSquare, 
-  LogOut,
-  Scale,
-  ChevronLeft,
-  ChevronRight
+  MessageSquare
 } from "lucide-react";
-import { useAuth } from "../context/Authcontext"; // 1. Import Auth Hook
+import { useAuth } from "../context/Authcontext";
+import { useTheme } from "../context/themeContext"; // Check if you need this for conditional rendering, usually CSS classes handle it
 
-const Sidebar = ({ isCollapsed, toggleSidebar }) => {
-  // 2. Get signOut function and user data
+// Default Citizen Links (Fallback)
+const CITIZEN_LINKS = [
+  { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
+  { icon: FileText, label: "My Cases", path: "/cases" },
+  { icon: ShieldAlert, label: "Emergency", path: "/sos" },
+  { icon: Map, label: "Safety Map", path: "/map" },
+  { icon: MessageSquare, label: "Legal Assistant", path: "/chat" },
+];
+
+const Sidebar = ({ isCollapsed, toggleSidebar, links = CITIZEN_LINKS, roleLabel = "Citizen" }) => {
   const { logout, user } = useAuth();
-  const navigate = useNavigate();
 
-  const navItems = [
-    { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
-    { icon: FileText, label: "My Cases", path: "/cases" },
-    { icon: ShieldAlert, label: "Emergency", path: "/sos" },
-    { icon: Map, label: "Safety Map", path: "/map" },
-    { icon: MessageSquare, label: "Legal Assistant", path: "/chat" },
-  ];
-
-  // Helper to get initials from the real user name
   const getUserInitials = () => {
-    const name = user?.user_metadata?.full_name || "Citizen";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .substring(0, 2)
-      .toUpperCase();
+    const name = user?.user_metadata?.full_name || "User";
+    return name.substring(0, 2).toUpperCase();
   };
-
   const handleLogout = async () => {
     await logout();
     navigate("/"); // or "/"
     };
 
-
   const getUserName = () => {
-     return user?.user_metadata?.full_name || "Citizen Account";
+     return user?.user_metadata?.full_name || "Account";
   };
 
   return (
     <aside 
       className={`fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 ease-in-out border-r
         ${isCollapsed ? "w-20" : "w-64"}
-        bg-white border-slate-200 text-slate-600 
+        /* LIGHT MODE: Warm Cream Background & Orange Border */
+        bg-[#FFFAF0] border-orange-100 
+        /* DARK MODE: Deep Slate Background & Dark Border */
         dark:bg-[#111827] dark:border-slate-800 dark:text-slate-400
       `}
     >
       {/* 1. Header / Logo */}
       <div className={`h-20 flex items-center border-b transition-colors
-        border-slate-100 dark:border-slate-800
+        border-orange-100 dark:border-slate-800
         ${isCollapsed ? "justify-center px-0" : "px-6"}
       `}>
-        <div className="p-1.5 bg-orange-50 dark:bg-orange-500/10 rounded-lg shrink-0">
+        <div className="p-1.5 bg-orange-100 dark:bg-orange-500/10 rounded-lg shrink-0">
           <Scale className="w-5 h-5 text-orange-600 dark:text-orange-500" />
         </div>
         {!isCollapsed && (
-          <span className="ml-3 font-bold text-lg tracking-tight whitespace-nowrap overflow-hidden text-slate-800 dark:text-white">
-            NyayaSahayak
+          <span className="ml-3 font-bold text-lg tracking-tight whitespace-nowrap overflow-hidden text-slate-800 dark:text-white font-serif-heading">
+            Nyaya<span className="text-orange-600">Sahayak</span>
           </span>
         )}
       </div>
 
       {/* 2. Navigation Links */}
-      <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto overflow-x-hidden">
+      <nav className="flex-1 py-6 px-3 space-y-1.5 overflow-y-auto overflow-x-hidden">
         {!isCollapsed && (
-          <div className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Main Menu
+          <div className="px-3 mb-3 text-[10px] font-bold uppercase tracking-widest text-orange-400 dark:text-slate-500">
+            {roleLabel} Menu
           </div>
         )}
         
-        {navItems.map((item) => (
+        {links.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[16px] font-bold transition-all duration-200 group relative
               ${isActive
-                ? "bg-orange-50 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500/20"
-                : "hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white"
+                ? "text-orange-800 shadow-md dark:from-white dark:to-slate-200 dark:text-slate-900" 
+                : "text-slate-600 hover:bg-orange-50 hover:text-orange-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               } ${isCollapsed ? "justify-center" : ""}`
             }
           >
-            <item.icon className="w-5 h-5 shrink-0" />
+            <item.icon className={`w-5 h-5 shrink-0 ${!isCollapsed ? "" : ""}`} />
             
             {!isCollapsed ? (
               <span className="whitespace-nowrap">{item.label}</span>
             ) : (
-              <span className="absolute left-14 bg-slate-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap">
+              <span className="absolute left-14 bg-slate-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap shadow-xl">
                 {item.label}
               </span>
             )}
@@ -103,53 +97,48 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         ))}
       </nav>
 
-      {/* 3. The Toggle Button */}
+      {/* 3. Toggle Button */}
       <button 
         onClick={toggleSidebar}
         className="absolute -right-3 top-20 rounded-full p-1 shadow-sm transition-colors z-50 border
-          bg-white border-slate-200 text-slate-500 hover:bg-slate-50
+          bg-[#FFFAF0] border-orange-200 text-orange-400 hover:bg-orange-100
           dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:text-white"
       >
         {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
       </button>
 
-      {/* 4. Footer / User Profile */}
-      <div className="p-3 border-t border-slate-100 dark:border-slate-800 transition-colors">
+      {/* 4. Footer */}
+      <div className="p-3 border-t border-orange-100 dark:border-slate-800 transition-colors bg-orange-50/30 dark:bg-transparent">
         <div className={`flex items-center gap-3 p-2 rounded-lg transition-colors
           ${isCollapsed ? "justify-center" : ""}
         `}>
-          {/* User Initials */}
           <div className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold
-            bg-slate-200 text-slate-600 
-            dark:bg-slate-700 dark:text-slate-300
+            bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-sm
+            dark:from-slate-700 dark:to-slate-600 dark:text-white
           ">
             {getUserInitials()}
           </div>
-          
-          {/* User Name Info */}
-            {!isCollapsed && (
-            <Link to="/profile" className="flex-1 min-w-0 overflow-hidden">
-                <div>
-                <p className="text-sm font-medium truncate text-slate-900 dark:text-white">
-                    {getUserName()}
-                </p>
-                <p className="text-xs truncate text-slate-500 dark:text-slate-400">
-                    Citizen
-                </p>
-                </div>
-            </Link>
-            )}
-
-
-          {/* Logout Trigger */}
           {!isCollapsed && (
-            <button 
-              onClick={handleLogout} // Triggers the logout
-              className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 group transition-colors"
-              title="Sign Out"
-            >
-              <LogOut className="w-4 h-4 text-slate-400 group-hover:text-red-500 transition-colors shrink-0" />
-            </button>
+            <Link to='/profile'>
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <p className="text-sm font-bold truncate text-slate-800 dark:text-white">
+                {getUserName()}
+              </p>
+              <p className="text-xs truncate text-slate-500 dark:text-slate-500 font-medium">
+                {roleLabel} Account
+              </p>
+            </div>
+            </Link>
+          )}
+          {!isCollapsed && (
+            
+                <button 
+                onClick={handleLogout} 
+                className="p-1.5 rounded-md cursor-pointer text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+                title="Sign Out"
+                >
+                <LogOut className="w-4 h-4 shrink-0" />
+                </button>
           )}
         </div>
       </div>

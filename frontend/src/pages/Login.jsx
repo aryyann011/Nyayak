@@ -39,7 +39,7 @@ const LoginPage = () => {
                 if (role === 'police') {
                     navigate('/police-dashboard', { replace: true });
                 } else if (role === 'lawyer') {
-                    navigate('/legal-dashboard', { replace: true });
+                    navigate('/lawyer/legal-dashboard', { replace: true });
                 } else {
                     navigate('/dashboard', { replace: true });
                 }
