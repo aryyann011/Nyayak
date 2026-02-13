@@ -82,12 +82,11 @@ const Chat = () => {
     }
   };
 
-  // Dynamic Theme Colors
   const theme = {
     bg: isDarkMode ? "#09090b" : "#f8fafc",
     text: isDarkMode ? "#ffffff" : "#0f172a",
-    card: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.8)",
-    border: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)",
+    card: isDarkMode ? "rgba(255, 255, 255, 0.03)" : "rgba(255, 255, 255, 0.7)",
+    border: isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
     accent: "#6366f1"
   };
 
@@ -95,30 +94,34 @@ const Chat = () => {
     <div style={{ 
       backgroundColor: theme.bg, 
       color: theme.text, 
-      transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)" 
+      transition: "background-color 0.8s ease" 
     }} className="relative min-h-screen overflow-hidden flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       
-      {/* Dynamic Background Auras */}
-      <div className={`absolute top-0 left-0 w-full h-full pointer-events-none opacity-30`}>
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/20 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 blur-[120px] rounded-full animate-pulse" />
+      {/* --- ANIMATED BACKGROUND LAYER --- */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="aura-blob aura-1" style={{ backgroundColor: `${theme.accent}20` }} />
+        <div className="aura-blob aura-2" style={{ backgroundColor: "#a855f715" }} />
+        <div className="aura-blob aura-3" style={{ backgroundColor: `${theme.accent}10` }} />
       </div>
 
       {/* Interface Header */}
-      <header className="relative z-20 flex justify-between items-center p-6 max-w-5xl mx-auto w-full">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl" style={{ backgroundColor: `${theme.accent}15`, border: `1px solid ${theme.accent}30` }}>
-            <Scale size={24} color={theme.accent} />
+      <header className="relative z-20 flex justify-between items-center p-8 max-w-6xl mx-auto w-full">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-2xl rotate-animate" style={{ backgroundColor: `${theme.accent}15`, border: `1px solid ${theme.accent}30` }}>
+            <Scale size={28} color={theme.accent} />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight">NyaySetu <span style={{ color: theme.accent }}>AI</span></h1>
-            <p className="text-[10px] uppercase tracking-widest font-bold opacity-50">V2.0 Core Intelligence</p>
+            <h1 className="text-2xl font-black tracking-tighter">NyaySetu <span style={{ color: theme.accent }}>AI</span></h1>
+            <div className="flex items-center gap-2">
+                <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                <p className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-40">System Online</p>
+            </div>
           </div>
         </div>
 
         <button 
           onClick={() => setIsDarkMode(!isDarkMode)}
-          className="p-3 rounded-full transition-all hover:scale-110 active:scale-90"
+          className="p-3 rounded-2xl transition-all hover:scale-110 active:scale-95 backdrop-blur-md shadow-xl"
           style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
         >
           {isDarkMode ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} className="text-indigo-600" />}
@@ -126,43 +129,44 @@ const Chat = () => {
       </header>
 
       {/* Main Chat Engine */}
-      <main className="relative z-10 flex-1 max-w-5xl mx-auto w-full flex flex-col px-4 pb-6 overflow-hidden">
-        <div className="flex-1 overflow-y-auto space-y-8 pr-2 scrollbar-custom">
+      <main className="relative z-10 flex-1 max-w-5xl mx-auto w-full flex flex-col px-6 pb-8 overflow-hidden">
+        <div className="flex-1 overflow-y-auto space-y-10 pr-4 scrollbar-custom">
           <AnimatePresence mode="popLayout">
             {messages.map((m) => (
               <motion.div
                 key={m.id}
-                initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
+                initial={{ opacity: 0, y: 30, filter: "blur(10px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                 className={`flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div 
                   style={{ 
                     backgroundColor: m.sender === "user" ? theme.accent : theme.card,
                     border: `1px solid ${m.sender === "user" ? "transparent" : theme.border}`,
-                    backdropFilter: "blur(20px)",
-                    boxShadow: m.sender === "user" ? `0 10px 30px -10px ${theme.accent}60` : "0 4px 20px rgba(0,0,0,0.05)"
+                    backdropFilter: "blur(25px)",
+                    boxShadow: m.sender === "user" ? `0 20px 40px -15px ${theme.accent}50` : "0 10px 30px -10px rgba(0,0,0,0.1)"
                   }}
-                  className={`relative p-5 rounded-[24px] max-w-[85%] md:max-w-[70%] ${m.sender === "user" ? "rounded-tr-none text-white" : "rounded-tl-none"}`}
+                  className={`relative p-6 rounded-[32px] max-w-[85%] md:max-w-[75%] ${m.sender === "user" ? "rounded-tr-none text-white font-semibold" : "rounded-tl-none font-medium text-[15.5px]"}`}
                 >
                   {m.sender === "bot" && (
-                    <div className="absolute -top-3 -left-3 p-1.5 rounded-lg border shadow-sm" style={{ backgroundColor: theme.bg, borderColor: theme.border }}>
-                      <Sparkles size={14} color={theme.accent} />
+                    <div className="absolute -top-4 -left-4 p-2 rounded-xl border shadow-lg backdrop-blur-md" style={{ backgroundColor: theme.bg, borderColor: theme.border }}>
+                      <Sparkles size={16} color={theme.accent} className="animate-pulse" />
                     </div>
                   )}
 
-                  <p className="text-[15px] leading-relaxed font-medium whitespace-pre-wrap">{m.text}</p>
+                  <p className="leading-relaxed whitespace-pre-wrap">{m.text}</p>
 
                   {m.file && (
-                    <div className="mt-3 flex items-center gap-2 p-2 rounded-lg bg-black/10 text-xs font-bold">
-                      <FileText size={14} /> {m.file.name}
+                    <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-black/20 text-xs border border-white/5">
+                      <FileText size={16} color={theme.accent} /> 
+                      <span className="opacity-80 font-bold uppercase">{m.file.name}</span>
                     </div>
                   )}
 
                   {m.sender === "bot" && (m.source || m.confidence) && (
-                    <div className="mt-4 pt-3 border-t flex items-center gap-4 text-[10px] font-bold uppercase tracking-wider opacity-60" style={{ borderColor: theme.border }}>
-                      <span className="flex items-center gap-1"><ShieldCheck size={12}/> {m.source || "System"}</span>
-                      {m.confidence && <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500">{m.confidence}% Match</span>}
+                    <div className="mt-5 pt-4 border-t flex items-center gap-5 text-[10px] font-black uppercase tracking-widest opacity-40" style={{ borderColor: theme.border }}>
+                      <span className="flex items-center gap-1.5"><ShieldCheck size={14}/> {m.source || "Legal Engine"}</span>
+                      {m.confidence && <span className="bg-white/10 px-2 py-1 rounded">{m.confidence}% Accuracy</span>}
                     </div>
                   )}
                 </div>
@@ -173,134 +177,57 @@ const Chat = () => {
           {/* AI Thinking State */}
           <AnimatePresence>
             {loading && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex justify-start items-end gap-3"
-              >
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex justify-start">
                 <div 
-                  style={{ 
-                    backgroundColor: theme.card, 
-                    border: `1px solid ${theme.border}`,
-                    backdropFilter: "blur(20px)",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.05)"
-                  }}
-                  className="p-5 rounded-[24px] rounded-tl-none flex flex-col gap-3 min-w-[200px] max-w-[300px]"
+                  style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, backdropFilter: "blur(30px)" }}
+                  className="p-6 rounded-[32px] rounded-tl-none flex flex-col gap-4 min-w-[260px] relative overflow-hidden"
                 >
-                  {/* Pulsing AI Core */}
+                  <div className="scanline" />
                   <div className="flex items-center gap-3">
-                    <div className="relative flex items-center justify-center">
-                      <motion.div 
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                        className="absolute w-4 h-4 rounded-full opacity-60" 
-                        style={{ backgroundColor: theme.accent }} 
-                      />
-                      <div 
-                        className="relative w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: theme.accent }} 
-                      />
+                    <div className="relative h-4 w-4">
+                        <div className="absolute inset-0 bg-indigo-500 rounded-full animate-ping opacity-20" />
+                        <div className="relative h-full w-full bg-indigo-500 rounded-full shadow-[0_0_10px_#6366f1]" />
                     </div>
-                    
-                    <span className="text-xs font-bold uppercase tracking-widest opacity-70 animate-pulse">
-                      NyaySetu Analyzing...
-                    </span>
+                    <span className="text-xs font-black uppercase tracking-[0.2em] opacity-60">AI Synthesizing</span>
                   </div>
-
-                  {/* Animated Progress Skeletons */}
-                  <div className="space-y-2">
-                    <motion.div 
-                      animate={{ opacity: [0.3, 0.6, 0.3] }}
-                      transition={{ repeat: Infinity, duration: 1.5 }}
-                      className="h-2 w-full rounded-full" 
-                      style={{ backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-                    />
-                    <motion.div 
-                      animate={{ opacity: [0.3, 0.6, 0.3] }}
-                      transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}
-                      className="h-2 w-[80%] rounded-full" 
-                      style={{ backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-                    />
-                    <motion.div 
-                      animate={{ opacity: [0.3, 0.6, 0.3] }}
-                      transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }}
-                      className="h-2 w-[60%] rounded-full" 
-                      style={{ backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-                    />
-                  </div>
-
-                  {/* Status Message */}
-                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 flex items-center gap-2">
-                    <Loader2 size={12} className="animate-spin" />
-                    {uploadedFile ? "📄 ANALYZING DOCUMENT..." : "🔍 SEARCHING LEGAL ARCHIVES..."}
-                  </div>
-
-                  {/* Animated Dots */}
-                  <div className="flex gap-1">
-                    <motion.div 
-                      animate={{ y: [0, -6, 0] }}
-                      transition={{ repeat: Infinity, duration: 0.6 }}
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: theme.accent }}
-                    />
-                    <motion.div 
-                      animate={{ y: [0, -6, 0] }}
-                      transition={{ repeat: Infinity, duration: 0.6, delay: 0.1 }}
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: theme.accent }}
-                    />
-                    <motion.div 
-                      animate={{ y: [0, -6, 0] }}
-                      transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: theme.accent }}
-                    />
+                  <div className="space-y-2.5">
+                    <div className="h-1.5 w-full rounded-full bg-indigo-500/10 overflow-hidden relative">
+                        <motion.div animate={{ x: ["-100%", "100%"] }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} className="absolute inset-0 bg-indigo-500/40 w-1/2" />
+                    </div>
+                    <div className="h-1.5 w-[70%] rounded-full bg-indigo-500/10 overflow-hidden relative">
+                         <motion.div animate={{ x: ["-100%", "100%"] }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear", delay: 0.3 }} className="absolute inset-0 bg-indigo-500/40 w-1/2" />
+                    </div>
                   </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-
           <div ref={messagesEndRef} />
         </div>
 
         {/* Action Center */}
-        <div className="mt-6 pt-4 border-t" style={{ borderColor: theme.border }}>
-          <AnimatePresence>
-            {filePreview && (
-              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} 
-                className="mb-4 p-3 rounded-2xl flex items-center justify-between" style={{ backgroundColor: `${theme.accent}10`, border: `1px solid ${theme.accent}30` }}>
-                <div className="flex items-center gap-3">
-                  <FileText className="text-indigo-500" />
-                  <span className="text-sm font-bold">{filePreview.name}</span>
-                </div>
-                <button onClick={() => setFilePreview(null)} className="text-red-500 p-1 hover:bg-red-500/10 rounded-full transition-colors"><X size={18}/></button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <form onSubmit={handleSendMessage} className="relative group">
+        <div className="mt-8">
+          <form onSubmit={handleSendMessage} className="relative max-w-4xl mx-auto">
             <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
             
             <div 
-              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, backdropFilter: "blur(20px)" }}
-              className="flex items-center gap-2 p-2 rounded-[28px] shadow-2xl transition-all duration-300 focus-within:ring-4 focus-within:ring-indigo-500/10"
+              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, backdropFilter: "blur(30px)" }}
+              className="flex items-center gap-4 p-3 rounded-[35px] shadow-2xl transition-all duration-500 focus-within:scale-[1.02] focus-within:shadow-indigo-500/10 focus-within:border-indigo-500/30"
             >
               <button 
                 type="button" 
                 onClick={() => fileInputRef.current.click()}
-                className="p-3 rounded-full hover:bg-gray-500/10 transition-colors text-gray-500"
+                className="p-4 rounded-full hover:bg-indigo-500/10 transition-colors text-gray-400 hover:text-indigo-500"
               >
-                <Upload size={22} />
+                <Upload size={24} />
               </button>
 
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Ask NyaySetu anything about legal procedures..."
-                className="flex-1 bg-transparent border-none outline-none py-3 text-sm font-medium"
+                placeholder="Briefly describe your legal inquiry..."
+                className="flex-1 bg-transparent border-none outline-none py-4 text-[16px] font-semibold tracking-tight"
                 style={{ color: theme.text }}
               />
 
@@ -308,20 +235,52 @@ const Chat = () => {
                 type="submit"
                 disabled={loading || (!inputText.trim() && !uploadedFile)}
                 style={{ backgroundColor: theme.accent }}
-                className="p-3.5 text-white rounded-[22px] transition-all active:scale-90 disabled:opacity-30 shadow-lg"
+                className="p-4 text-white rounded-full transition-all active:scale-90 disabled:opacity-20 shadow-[0_10px_20px_-5px_#6366f1]"
               >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
+                {loading ? <Loader2 className="animate-spin" size={24} /> : <Send size={24} />}
               </button>
             </div>
           </form>
-          <p className="text-center text-[9px] font-black uppercase tracking-[0.3em] mt-4 opacity-40">End-to-End Encrypted Legal Query</p>
+          <p className="text-center text-[8px] font-black uppercase tracking-[0.5em] mt-6 opacity-30">Legal Intelligence & Analysis Framework</p>
         </div>
       </main>
 
       <style>{`
-        .scrollbar-custom::-webkit-scrollbar { width: 4px; }
-        .scrollbar-custom::-webkit-scrollbar-thumb { background: ${theme.border}; border-radius: 10px; }
-        input::placeholder { opacity: 0.5; }
+        @keyframes blob-float {
+          0% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0, 0) scale(1); }
+        }
+
+        .aura-blob {
+          position: absolute;
+          width: 600px;
+          height: 600px;
+          border-radius: 50%;
+          filter: blur(100px);
+          animation: blob-float 15s infinite ease-in-out;
+        }
+
+        .aura-1 { top: -10%; left: -10%; }
+        .aura-2 { bottom: -10%; right: -10%; animation-delay: -5s; }
+        .aura-3 { top: 30%; left: 20%; animation-duration: 12s; opacity: 0.5; }
+
+        .rotate-animate:hover { transform: rotate(10deg); transition: 0.3s; }
+
+        .scanline {
+          position: absolute;
+          top: 0; left: 0; width: 100%; height: 100%;
+          background: linear-gradient(to bottom, transparent, rgba(99, 102, 241, 0.05), transparent);
+          animation: scan 2s linear infinite;
+          pointer-events: none;
+        }
+
+        @keyframes scan { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
+
+        .scrollbar-custom::-webkit-scrollbar { width: 5px; }
+        .scrollbar-custom::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.2); border-radius: 10px; }
+        input::placeholder { opacity: 0.3; }
       `}</style>
     </div>
   );

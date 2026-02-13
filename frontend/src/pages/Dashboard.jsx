@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Bell,
@@ -27,6 +28,7 @@ const staggerContainer = {
 
 const Dashboard = () => {
   const [hoveredCard, setHoveredCard] = useState(null);
+  const navigate = useNavigate();
 
   return (
     <motion.div
@@ -123,6 +125,7 @@ const Dashboard = () => {
             />
             <motion.button 
               whileHover={{ scale: 1.05 }}
+              onClick={() => navigate("/chat")}
               whileTap={{ scale: 0.95 }}
               style={{ background: "#E85D04", border: "none", borderRadius: "30px", padding: "12px 25px", color: "white", display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontWeight: 600 }}
             >
