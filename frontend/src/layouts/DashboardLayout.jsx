@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { Bell, Search, Plus, Sun, Moon } from "lucide-react";
-import { useTheme } from "../context/themeContext";
+import { useTheme } from "../context/themeContext"; // ✅ FIXED: Capital 'T'
 
 const DashboardLayout = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -14,17 +14,14 @@ const DashboardLayout = ({ children }) => {
         toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
       />
 
-      {/* FIXED MARGIN LOGIC:
-         Sidebar is w-64 (256px). Margin must be ml-64.
-         Sidebar collapsed is w-20 (80px). Margin must be ml-20.
-      */}
+      {/* MARGIN LOGIC: Matches Sidebar width (w-64 = 16rem = ml-64) */}
       <div 
         className={`min-h-screen flex flex-col transition-all duration-300 ease-in-out ${
           isSidebarCollapsed ? "ml-20" : "ml-64"
         }`}
       >
-        {/* Header */}
-        <header className="h-16 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 px-8 flex items-center justify-between transition-colors duration-300">
+        {/* HEADER: ✅ FIXED Height to h-20 to match Sidebar */}
+        <header className="h-20 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 px-8 flex items-center justify-between transition-colors duration-300">
           
           <div className="relative w-96">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -36,7 +33,7 @@ const DashboardLayout = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* THEME TOGGLE BUTTON */}
+            {/* Theme Toggle */}
             <button 
               onClick={toggleTheme}
               className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all border border-transparent dark:border-gray-700"

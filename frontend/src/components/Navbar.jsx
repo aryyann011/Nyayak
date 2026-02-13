@@ -56,9 +56,9 @@ const Navbar = () => {
           <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
           {/* Buttons */}
-          <Link to="/profile" className={`hidden sm:block text-sm font-semibold transition-colors ${isDark ? 'text-white hover:text-orange-400' : 'text-slate-700 hover:text-orange-600'}`}>
+          {/* <Link to="/profile" className={`hidden sm:block text-sm font-semibold transition-colors ${isDark ? 'text-white hover:text-orange-400' : 'text-slate-700 hover:text-orange-600'}`}>
             Profile
-          </Link>
+          </Link> */}
           <Link to="/login" className={`hidden sm:block text-sm font-semibold transition-colors ${isDark ? 'text-white hover:text-orange-400' : 'text-slate-700 hover:text-orange-600'}`}>
             Log in
           </Link>

@@ -34,11 +34,12 @@ const Dashboard = () => {
   if (loading) return <div className="p-10 text-center">Loading Dashboard...</div>;
 
   return (
-    <DashboardLayout>
+    // <DashboardLayout>
+    <>
       {role === 'citizen' && <CitizenDashboard user={user} />}
       {role === 'police' && <div className="p-10">Police Dashboard Coming Soon</div>}
       {role === 'lawyer' && <div className="p-10">Lawyer Dashboard Coming Soon</div>}
-    </DashboardLayout>
+    </>
   );
 };
 
