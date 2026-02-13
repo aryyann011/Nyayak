@@ -48,7 +48,10 @@ export const AuthProvider = ({ children }) => {
       email: data.email,
       password: data.password,
     });
-    if (error) throw error;
+    if (error){
+      console.log(error)
+      throw error;
+    }
     return response;
   };
 
