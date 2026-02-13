@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -127,16 +127,19 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           </div>
           
           {/* User Name Info */}
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0 overflow-hidden">
-              <p className="text-sm font-medium truncate text-slate-900 dark:text-white">
-                {getUserName()}
-              </p>
-              <p className="text-xs truncate text-slate-500 dark:text-slate-400">
-                Citizen
-              </p>
-            </div>
-          )}
+            {!isCollapsed && (
+            <Link to="/profile" className="flex-1 min-w-0 overflow-hidden">
+                <div>
+                <p className="text-sm font-medium truncate text-slate-900 dark:text-white">
+                    {getUserName()}
+                </p>
+                <p className="text-xs truncate text-slate-500 dark:text-slate-400">
+                    Citizen
+                </p>
+                </div>
+            </Link>
+            )}
+
 
           {/* Logout Trigger */}
           {!isCollapsed && (

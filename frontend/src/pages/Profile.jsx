@@ -211,7 +211,7 @@ export default function Profile() {
       </div>
 
       <div className="relative z-10">
-        <Navbar />
+        {/* <Navbar /> */}
         <div className="h-24" />
         <div className="max-w-7xl mx-auto px-6 py-24">
         <div
