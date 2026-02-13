@@ -31,7 +31,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className={`text-center text-5xl md:text-7xl font-serif-heading font-black tracking-tight leading-[1.1] mb-8 px-4 ${isDark ? 'text-white' : 'text-slate-900'}`}
+          className={`text-center text-4xl md:text-6xl font-serif-heading font-black tracking-tight leading-[1.1] mb-8 px-4 ${isDark ? 'text-white' : 'text-slate-900'}`}
         >
           Simplifying Justice. <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-500">

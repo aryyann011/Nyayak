@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import SafetyMap from "./pages/SafetyMap";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
+import PoliceLayout from "./layouts/PoliceLayout";
 
 import LawyerDashboard from "./pages/lawyer/LawyerDashboard";
 import CaseManagement from "./pages/lawyer/CaseManagement";
@@ -24,6 +25,7 @@ import { AuthProvider } from "./context/Authcontext";
 
 /* ================= ROUTE PROTECTION ================= */
 import ProtectedRoute from "./components/ProtectedRoute";
+import PoliceDashboard from "./pages/police/PoliceDashboard";
 
 function App() {
   return (
@@ -36,6 +38,19 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+
+            <Route
+              element={
+                <ProtectedRoute>
+                  <PoliceLayout>
+                    <Outlet />
+                  </PoliceLayout>
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/police-dashboard" element={<PoliceDashboard />} />
+              {/* Add other police pages here later */}
+            </Route>
 
             {/* ================= LAWYER PROTECTED ROUTES ================= */}
             <Route

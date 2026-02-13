@@ -29,7 +29,7 @@ const LawyerLayout = ({ children }) => {
         isCollapsed={isSidebarCollapsed} 
         toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         links={LAWYER_LINKS}    // 👈 Inject Lawyer Links
-        roleLabel="Advocate"    // 👈 Change Label
+        roleLabel="lawyer"    // 👈 Change Label
       />
 
       {/* 2. Main Content Wrapper */}
