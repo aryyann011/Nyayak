@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
   FileText, 
@@ -11,8 +11,13 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
+import { useAuth } from "../context/Authcontext"; // 1. Import Auth Hook
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
+  // 2. Get signOut function and user data
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+
   const navItems = [
     { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
     { icon: FileText, label: "My Cases", path: "/cases" },
@@ -20,6 +25,27 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     { icon: Map, label: "Safety Map", path: "/map" },
     { icon: MessageSquare, label: "Legal Assistant", path: "/chat" },
   ];
+
+  // Helper to get initials from the real user name
+  const getUserInitials = () => {
+    const name = user?.user_metadata?.full_name || "Citizen";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/"); // or "/"
+    };
+
+
+  const getUserName = () => {
+     return user?.user_metadata?.full_name || "Citizen Account";
+  };
 
   return (
     <aside 
@@ -89,23 +115,39 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
       {/* 4. Footer / User Profile */}
       <div className="p-3 border-t border-slate-100 dark:border-slate-800 transition-colors">
-        <div className={`flex items-center gap-3 p-2 rounded-lg transition-colors cursor-pointer
-          hover:bg-slate-50 dark:hover:bg-slate-800/50
+        <div className={`flex items-center gap-3 p-2 rounded-lg transition-colors
           ${isCollapsed ? "justify-center" : ""}
         `}>
+          {/* User Initials */}
           <div className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold
             bg-slate-200 text-slate-600 
             dark:bg-slate-700 dark:text-slate-300
           ">
-            RV
+            {getUserInitials()}
           </div>
+          
+          {/* User Name Info */}
           {!isCollapsed && (
             <div className="flex-1 min-w-0 overflow-hidden">
-              <p className="text-sm font-medium truncate text-slate-900 dark:text-white">Rahul Verma</p>
-              <p className="text-xs truncate text-slate-500 dark:text-slate-400">Citizen</p>
+              <p className="text-sm font-medium truncate text-slate-900 dark:text-white">
+                {getUserName()}
+              </p>
+              <p className="text-xs truncate text-slate-500 dark:text-slate-400">
+                Citizen
+              </p>
             </div>
           )}
-          {!isCollapsed && <LogOut className="w-4 h-4 text-slate-400 hover:text-red-500 transition-colors shrink-0" />}
+
+          {/* Logout Trigger */}
+          {!isCollapsed && (
+            <button 
+              onClick={handleLogout} // Triggers the logout
+              className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 group transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4 text-slate-400 group-hover:text-red-500 transition-colors shrink-0" />
+            </button>
+          )}
         </div>
       </div>
     </aside>
