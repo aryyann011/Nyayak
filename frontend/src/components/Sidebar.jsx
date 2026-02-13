@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { 
   LogOut,
   Scale,
@@ -24,12 +24,16 @@ const CITIZEN_LINKS = [
 ];
 
 const Sidebar = ({ isCollapsed, toggleSidebar, links = CITIZEN_LINKS, roleLabel = "Citizen" }) => {
-  const { signOut, user } = useAuth();
+  const { logout, user } = useAuth();
 
   const getUserInitials = () => {
     const name = user?.user_metadata?.full_name || "User";
     return name.substring(0, 2).toUpperCase();
   };
+  const handleLogout = async () => {
+    await logout();
+    navigate("/"); // or "/"
+    };
 
   const getUserName = () => {
      return user?.user_metadata?.full_name || "Account";
@@ -75,8 +79,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar, links = CITIZEN_LINKS, roleLabel 
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[16px] font-bold transition-all duration-200 group relative
               ${isActive
-                ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md shadow-orange-500/20 dark:from-white dark:to-slate-200 dark:text-slate-900" 
-                : "text-slate-600 hover:bg-orange-50 hover:text-orange-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                ? "text-orange-800 shadow-md dark:from-white dark:to-slate-200 dark:text-slate-900" 
+                : "text-slate-600 hover:bg-orange-50 hover:text-orange-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               } ${isCollapsed ? "justify-center" : ""}`
             }
           >
@@ -115,6 +119,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, links = CITIZEN_LINKS, roleLabel 
             {getUserInitials()}
           </div>
           {!isCollapsed && (
+            <Link to='/profile'>
             <div className="flex-1 min-w-0 overflow-hidden">
               <p className="text-sm font-bold truncate text-slate-800 dark:text-white">
                 {getUserName()}
@@ -123,15 +128,17 @@ const Sidebar = ({ isCollapsed, toggleSidebar, links = CITIZEN_LINKS, roleLabel 
                 {roleLabel} Account
               </p>
             </div>
+            </Link>
           )}
           {!isCollapsed && (
-            <button 
-              onClick={signOut} 
-              className="p-1.5 rounded-md text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
-              title="Sign Out"
-            >
-              <LogOut className="w-4 h-4 shrink-0" />
-            </button>
+            
+                <button 
+                onClick={handleLogout} 
+                className="p-1.5 rounded-md cursor-pointer text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+                title="Sign Out"
+                >
+                <LogOut className="w-4 h-4 shrink-0" />
+                </button>
           )}
         </div>
       </div>
