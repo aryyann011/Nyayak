@@ -26,6 +26,7 @@ import { AuthProvider } from "./context/Authcontext";
 /* ================= ROUTE PROTECTION ================= */
 import ProtectedRoute from "./components/ProtectedRoute";
 import PoliceDashboard from "./pages/police/PoliceDashboard";
+import ComplaintPage from "./pages/ComplaintPage";
 
 function App() {
   return (
@@ -86,6 +87,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/map" element={<SafetyMap />} />
               <Route path="/chat" element={<Chat />} />
+              <Route path="/complaint" element={<ComplaintPage/>} />
             </Route>
 
             {/* ================= PROFILE ROUTES ================= */}
