@@ -5,6 +5,7 @@ import { getProfile } from "../lib/profileService";
 
 // Import the sub-dashboards (We will build these next)
 import CitizenDashboard from "./dashboards/CitizenDashboard";
+import LawyerDashboard from "./lawyer/LawyerDashboard";
 // import PoliceDashboard from "./dashboards/PoliceDashboard"; // Placeholder
 // import LawyerDashboard from "./dashboards/LawyerDashboard"; // Placeholder
 
@@ -38,7 +39,7 @@ const Dashboard = () => {
     <>
       {role === 'citizen' && <CitizenDashboard user={user} />}
       {role === 'police' && <div className="p-10">Police Dashboard Coming Soon</div>}
-      {role === 'lawyer' && <div className="p-10">Lawyer Dashboard Coming Soon</div>}
+      {role === 'lawyer' && <LawyerDashboard/>}
     </>
   );
 };

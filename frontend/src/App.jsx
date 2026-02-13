@@ -13,7 +13,8 @@ import Chat from "./pages/Chat"; // ✅ Chat added
 // Contexts
 import { ThemeProvider } from "./context/themeContext";
 import { AuthProvider } from "./context/Authcontext";
-
+import LawyerDashboard from "./pages/lawyer/LawyerDashboard";
+import LawyerLayout from "./layouts/LawyerLayout";
 // Layouts & Protection
 import DashboardLayout from "./layouts/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -34,6 +35,24 @@ function App() {
             {/* This single Route wraps ALL protected pages with Layout & Auth Check */}
             <Route element={
               <ProtectedRoute>
+                <LawyerLayout>
+                  <Outlet />
+                </LawyerLayout>
+              </ProtectedRoute>
+            }>
+              {/* The Chamber (Main Dashboard) */}
+              <Route path="/lawyer/legal-dashboard" element={<LawyerDashboard />} />
+              
+              {/* The Requests (Marketplace) */}
+              {/* <Route path="/lawyer/requests" element={<LawyerRequests />} /> */}
+              
+              {/* Placeholders for links to prevent crashing */}
+              {/* <Route path="/lawyer/cases" element={<div className="p-10">My Cases (Coming Soon)</div>} /> */}
+              {/* <Route path="/lawyer/tools" element={<div className="p-10">Drafting Tools (Coming Soon)</div>} /> */}
+              {/* <Route path="/lawyer/schedule" element={<div className="p-10">Court Schedule (Coming Soon)</div>} /> */}
+            </Route>
+            <Route element={
+              <ProtectedRoute>
                 <DashboardLayout>
                   <Outlet /> {/* This renders the specific child route (Dashboard, Map, Profile) */}
                 </DashboardLayout>
@@ -42,6 +61,7 @@ function App() {
             }>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/map" element={<SafetyMap />} />
+              <Route path="/chat" element={<Chat />} /> {/* ✅ Chat route */}
             </Route>
              <Route element={
               <ProtectedRoute>
@@ -53,7 +73,7 @@ function App() {
               {/* ✅ ADD PROFILE HERE */}
               <Route path="/profile" element={<Profile />} />
               <Route path="/profile/security" element={<div className="p-10">Security Settings (Coming Soon)</div>} />
-              <Route path="/chat" element={<Chat />} /> {/* ✅ Chat route */}
+              
             </Route>
 
           </Routes>
