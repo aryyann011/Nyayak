@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Users, 
   Clock, 
@@ -8,7 +9,7 @@ import {
   ArrowRight,
   MoreHorizontal,
   Gavel,
-  AlertCircle
+  Briefcase
 } from "lucide-react";
 
 // Mock Data
@@ -26,6 +27,8 @@ const schedule = [
 ];
 
 const LawyerDashboard = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       
@@ -123,42 +126,29 @@ const LawyerDashboard = () => {
            </div>
         </div>
 
-        {/* Right: Urgent Requests - Professional Dark Theme */}
-        <div className="bg-[#1e293b] dark:bg-[#0f172a] rounded-lg p-6 text-white shadow-lg flex flex-col relative overflow-hidden ring-1 ring-slate-700/50">
-           {/* Glows */}
-           <div className="absolute top-0 right-0 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
-           <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl -ml-10 -mb-10" />
-           
-           <div className="relative z-10">
-             <div className="flex items-center gap-3 mb-6">
-                <div className="p-1.5 bg-orange-500/20 rounded-md text-orange-400 border border-orange-500/20">
-                    <AlertCircle className="w-4 h-4" />
+        {/* Right: Case Management Button */}
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 shadow-sm flex flex-col justify-between">
+           <div>
+             <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg text-orange-600 dark:text-orange-400">
+                    <Briefcase className="w-6 h-6" />
                 </div>
                 <div>
-                    <h3 className="text-base font-bold">Priority Inbox</h3>
-                    <p className="text-slate-400 text-[10px] font-medium uppercase tracking-wide">New "Cyber Crime" Leads</p>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Manage Cases</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">View case requests and your docket</p>
                 </div>
              </div>
-             
-             <div className="space-y-3 mb-8">
-               {[1, 2].map((i) => (
-                 <div key={i} className="p-3 bg-slate-800/50 rounded-md border border-slate-700/50 hover:bg-slate-800 hover:border-orange-500/30 transition-all cursor-pointer group shadow-sm">
-                    <div className="flex justify-between items-start mb-2">
-                       <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400 bg-orange-400/10 px-1.5 py-0.5 rounded-sm border border-orange-500/20">Cyber Fraud</span>
-                       <span className="text-[10px] text-slate-500">10m ago</span>
-                    </div>
-                    <p className="text-xs font-medium text-slate-200 line-clamp-2 leading-relaxed">"My bank account was hacked via a phishing link, lost 50k..."</p>
-                 </div>
-               ))}
-             </div>
-
-             <div className="mt-auto">
-                <button className="w-full py-3 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 group shadow-lg shadow-orange-900/20 border border-orange-400/20">
-                    View All Requests
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-             </div>
+             <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+               Access all pending legal requests, manage your active court cases, and track important deadlines in one place.
+             </p>
            </div>
+           
+           <button 
+             onClick={() => navigate("/lawyer/cases")}
+             className="w-full py-3 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 group shadow-lg shadow-orange-900/20 border border-orange-400/20">
+                Go to Case Management
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+             </button>
         </div>
 
       </div>
