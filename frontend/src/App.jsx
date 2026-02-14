@@ -14,6 +14,7 @@ import IncidentReports from "./pages/police/IncidentReports";
 
 import LawyerDashboard from "./pages/lawyer/LawyerDashboard";
 import CaseManagement from "./pages/lawyer/CaseManagement";
+import CaseDetails from "./pages/CaseDetails";
 
 /* ================= LAYOUTS ================= */
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -32,6 +33,8 @@ import ComplaintPage from "./pages/ComplaintPage";
 import EmergencyLogs from "./pages/EmergencyLogs";
 import FindLawyer from "./pages/lawyer/FindLawyer";
 
+/* ================= PAYMENT ================= */
+import PaymentPage from "./pages/PaymentPage";
 function App() {
   return (
     <ThemeProvider>
@@ -95,6 +98,8 @@ function App() {
               <Route path="/complaint" element={<ComplaintPage/>} />
               <Route path="/emergency-logs" element={<EmergencyLogs/>} />
               <Route path="/find-lawyer" element={<FindLawyer/>} />
+              <Route path="/payment" element={<PaymentPage />} />
+              <Route path="/cases" element={<CaseDetails />} />
             </Route>
 
             {/* ================= PROFILE ROUTES ================= */}
