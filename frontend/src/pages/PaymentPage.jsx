@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FiShield, FiCheck, FiArrowLeft, FiInfo, FiMoon, FiSun } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/themeContext";
+import { supabase } from "../lib/supabase";
 
 export default function PaymentPage() {
   const navigate = useNavigate();
@@ -18,9 +19,9 @@ export default function PaymentPage() {
 
   const handlePayment = async () => {
     setLoading(true);
-    // Add your Razorpay logic here (createOrder, etc.)
-    // After success: supabase.from('cases').update({ payment_status: 'paid' })
-    setTimeout(() => setLoading(false), 2000); // Demo delay
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    alert("Payment Successful 🎉");
+    setLoading(false);
   };
 
   return (
@@ -93,7 +94,7 @@ export default function PaymentPage() {
               {loading ? (
                 <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
               ) : (
-                <>Pay with Razorpay <FiCheck /></>
+                <>Pay Now</>
               )}
             </button>
 

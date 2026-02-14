@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Upload, FileText, Loader2, X, Scale, ShieldCheck, Sparkles, Sun, Moon } from "lucide-react";
+import { useTheme } from "../context/themeContext";
 
 const Chat = () => {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const { isDark, toggleTheme } = useTheme();
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -83,10 +84,10 @@ const Chat = () => {
   };
 
   const theme = {
-    bg: isDarkMode ? "#09090b" : "#f8fafc",
-    text: isDarkMode ? "#ffffff" : "#0f172a",
-    card: isDarkMode ? "rgba(255, 255, 255, 0.03)" : "rgba(255, 255, 255, 0.7)",
-    border: isDarkMode ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+    bg: isDark ? "#09090b" : "#f8fafc",
+    text: isDark ? "#ffffff" : "#0f172a",
+    card: isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(255, 255, 255, 0.7)",
+    border: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
     accent: "#6366f1"
   };
 
@@ -105,7 +106,7 @@ const Chat = () => {
       </div>
 
       {/* Interface Header */}
-      <header className="relative z-20 flex justify-between items-center p-8 max-w-6xl mx-auto w-full">
+      <header className="relative z-20 flex justify-between items-center p-8 w-full">
         <div className="flex items-center gap-4">
           <div className="p-3 rounded-2xl rotate-animate" style={{ backgroundColor: `${theme.accent}15`, border: `1px solid ${theme.accent}30` }}>
             <Scale size={28} color={theme.accent} />
@@ -120,16 +121,16 @@ const Chat = () => {
         </div>
 
         <button 
-          onClick={() => setIsDarkMode(!isDarkMode)}
+          onClick={toggleTheme}
           className="p-3 rounded-2xl transition-all hover:scale-110 active:scale-95 backdrop-blur-md shadow-xl"
           style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
         >
-          {isDarkMode ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} className="text-indigo-600" />}
+          {isDark ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} className="text-indigo-600" />}
         </button>
       </header>
 
       {/* Main Chat Engine */}
-      <main className="relative z-10 flex-1 max-w-5xl mx-auto w-full flex flex-col px-6 pb-8 overflow-hidden">
+      <main className="relative z-10 flex-1 w-full flex flex-col px-6 pb-8 overflow-hidden">
         <div className="flex-1 overflow-y-auto space-y-10 pr-4 scrollbar-custom">
           <AnimatePresence mode="popLayout">
             {messages.map((m) => (
@@ -206,8 +207,8 @@ const Chat = () => {
         </div>
 
         {/* Action Center */}
-        <div className="mt-8">
-          <form onSubmit={handleSendMessage} className="relative max-w-4xl mx-auto">
+        <div className="mt-8 w-full px-6">
+          <form onSubmit={handleSendMessage} className="relative">
             <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
             
             <div 

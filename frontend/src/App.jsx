@@ -30,6 +30,7 @@ import PoliceDashboard from "./pages/police/PoliceDashboard";
 import ComplaintPage from "./pages/ComplaintPage";
 /* ================= PAYMENT ================= */
 import PaymentPage from "./pages/PaymentPage";
+import PaymentSuccess from "./pages/PaymentSuccess";
 function App() {
   return (
     <ThemeProvider>
@@ -41,6 +42,7 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
 
             <Route
               element={
