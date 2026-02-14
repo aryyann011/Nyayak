@@ -1,114 +1,208 @@
-import { useNavigate } from "react-router-dom";
-import { FiClock, FiUser, FiCreditCard, FiArrowRight, FiCheckCircle } from "react-icons/fi";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { 
+  ArrowLeft, Clock, User, CreditCard, ArrowRight, CheckCircle, 
+  FileText, Shield, AlertCircle, Loader2, Calendar, MapPin, Download 
+} from "lucide-react";
+import { supabase } from "../../lib/supabase";
 
 export default function CaseDetails() {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const [caseData, setCaseData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const caseData = {
-    title: "Property Dispute Case",
-    caseId: "NYA-2024-0892",
-    lawyer: "Adv. Rajesh Sharma",
-    status: "Accepted",
-    payment_due: 5000,
-    payment_status: "unpaid",
-    next_hearing: "Oct 24, 2026",
-  };
+  useEffect(() => {
+    // 1. Validate ID before fetching
+    if (!id || id === 'undefined') {
+        setLoading(false);
+        return;
+    }
+
+    const fetchCase = async () => {
+      const { data, error } = await supabase
+        .from('cases')
+        .select(`*, lawyers:lawyer_id ( name, hourly_rate, location, avatar_url )`)
+        .eq('id', id)
+        .single();
+
+      if (!error) setCaseData(data);
+      setLoading(false);
+    };
+
+    fetchCase();
+
+    // Realtime Listener
+    const channel = supabase.channel('case_detail').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'cases', filter: `id=eq.${id}` }, (payload) => {
+        setCaseData(prev => ({ ...prev, ...payload.new }));
+    }).subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [id]);
+
+  // --- LOADING STATE ---
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC]">
+       <Loader2 className="w-10 h-10 animate-spin text-slate-300 mb-4" />
+       <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Retrieving Case File...</p>
+    </div>
+  );
+
+  // --- NOT FOUND STATE (Fixed UI) ---
+  if (!caseData) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC] p-4">
+       <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm text-center max-w-md w-full">
+          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+             <FileText className="w-8 h-8 text-slate-300" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2 font-serif-heading">Case Not Found</h2>
+          <p className="text-slate-500 mb-8">The case ID you are looking for does not exist or you do not have permission to view it.</p>
+          <button onClick={() => navigate('/my-cases')} className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-black transition">
+             Return to Dashboard
+          </button>
+       </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 p-4 md:p-10 font-sans">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 p-6 md:p-10 font-sans">
+      <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
+        
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
           <div>
-            <span className="text-orange-500 font-bold tracking-widest text-xs uppercase">Case Management</span>
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mt-1">{caseData.title}</h1>
-            <p className="text-slate-500 mt-1">ID: {caseData.caseId}</p>
+            <div className="flex items-center gap-2 mb-2">
+               <span className="text-orange-600 font-bold tracking-widest text-[10px] uppercase bg-orange-50 px-2 py-1 rounded border border-orange-100">
+                 {caseData.category}
+               </span>
+               <span className="text-slate-400 text-xs font-mono uppercase">ID: {caseData.id.slice(0, 8)}</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 font-serif-heading capitalize">
+              {caseData.title}
+            </h1>
           </div>
           <button 
-            onClick={() => navigate(-1)}
-            className="text-slate-500 hover:text-slate-800 transition font-medium flex items-center gap-2"
+            onClick={() => navigate('/my-cases')}
+            className="text-slate-500 hover:text-slate-900 transition font-bold text-xs uppercase tracking-wider flex items-center gap-2 bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300"
           >
-            ← Back to Dashboard
+            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </button>
         </div>
 
         {/* Bento Grid Layout */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Main Status Card */}
-          <div className="md:col-span-2 bg-white border border-slate-100 p-8 rounded-[2rem] shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-400 mb-6 uppercase tracking-wider">Current Progress</h3>
-                <div className="flex items-center gap-4">
-                  <div className="p-4 bg-green-50 rounded-2xl">
-                    <FiCheckCircle className="text-3xl text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold text-slate-800">{caseData.status}</p>
-                    <p className="text-slate-500">Your application was reviewed and approved.</p>
-                  </div>
+          {/* 1. Main Status Card */}
+          <div className="md:col-span-2 bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm relative overflow-hidden">
+            <div className="relative z-10">
+              <h3 className="text-xs font-bold text-slate-400 mb-6 uppercase tracking-widest flex items-center gap-2">
+                <Shield className="w-4 h-4" /> Current Status
+              </h3>
+              <div className="flex items-center gap-6">
+                <div className={`p-5 rounded-2xl ${caseData.status === 'Active' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                  {caseData.status === 'Rejected' ? <AlertCircle className="w-8 h-8" /> : <CheckCircle className="w-8 h-8" />}
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-slate-900">{caseData.status}</p>
+                  <p className="text-slate-500 font-medium mt-1">
+                    {caseData.status === 'Pending Acceptance' ? 'Waiting for lawyer to review.' : 'Your case is being processed.'}
+                  </p>
                 </div>
               </div>
             </div>
-            
-            {/* Simple Timeline Visual */}
-            <div className="mt-10 flex items-center gap-2">
-              <div className="h-2 w-full bg-green-500 rounded-full"></div>
-              <div className="h-2 w-full bg-green-500 rounded-full"></div>
-              <div className="h-2 w-full bg-slate-100 rounded-full"></div>
-              <div className="h-2 w-full bg-slate-100 rounded-full"></div>
-            </div>
           </div>
 
-          {/* Payment Widget */}
-          <div className={`p-8 rounded-[2rem] border transition-all ${caseData.payment_status === 'unpaid' ? 'bg-orange-500 text-white border-orange-400 shadow-orange-200 shadow-xl' : 'bg-white border-slate-100'}`}>
-            <FiCreditCard className="text-3xl mb-4" />
-            <h3 className="text-lg font-medium opacity-80 uppercase tracking-wider">Pending Dues</h3>
-            <p className="text-4xl font-black mt-2">₹{caseData.payment_due}</p>
+          {/* 2. Payment / Action Widget */}
+          <div className={`p-8 rounded-[2rem] border transition-all flex flex-col justify-between
+             ${caseData.status === 'Payment Pending' 
+               ? 'bg-slate-900 text-white border-slate-900 shadow-xl' 
+               : 'bg-white border-slate-200 text-slate-900'}`
+          }>
+            <div>
+               <div className="flex justify-between items-start">
+                  <CreditCard className={`w-8 h-8 mb-4 ${caseData.status === 'Payment Pending' ? 'text-orange-400' : 'text-slate-300'}`} />
+                  {caseData.status === 'Active' && <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">PAID</span>}
+               </div>
+               <h3 className={`text-xs font-bold uppercase tracking-widest ${caseData.status === 'Payment Pending' ? 'text-slate-400' : 'text-slate-400'}`}>
+                 Retainer Fee
+               </h3>
+               <p className="text-4xl font-black mt-2">
+                 {caseData.lawyers ? caseData.lawyers.hourly_rate : "₹0"}
+               </p>
+            </div>
             
-            {caseData.payment_status === "unpaid" && (
+            {caseData.status === 'Payment Pending' ? (
               <button
-                onClick={() => navigate("/payment")}
-                className="mt-8 w-full bg-white text-orange-600 py-4 rounded-2xl font-bold hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg"
+                onClick={() => navigate("/payment", { state: { caseId: caseData.id, amount: 5000 } })}
+                className="mt-8 w-full bg-white text-slate-900 py-4 rounded-xl font-bold hover:bg-orange-50 hover:text-orange-600 transition-all flex items-center justify-center gap-2 shadow-lg"
               >
-                Pay Now <FiArrowRight />
+                Pay Now <ArrowRight className="w-4 h-4" />
               </button>
+            ) : (
+               <div className="mt-8 w-full border border-slate-200 text-slate-400 py-3 rounded-xl font-bold flex items-center justify-center text-xs uppercase tracking-wider cursor-not-allowed">
+                  {caseData.status === 'Active' ? 'Invoice Paid' : 'No Action Needed'}
+               </div>
             )}
           </div>
 
-          {/* Lawyer Info Card */}
-          <div className="bg-white border border-slate-100 p-8 rounded-[2rem] shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">Assigned Council</h3>
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 bg-slate-100 rounded-full flex items-center justify-center text-xl font-bold text-slate-500">
-                <FiUser />
-              </div>
-              <div>
-                <p className="font-bold text-slate-800">{caseData.lawyer}</p>
-                <p className="text-xs text-slate-500 underline cursor-pointer hover:text-orange-500">View Profile</p>
-              </div>
+          {/* 3. Lawyer Info */}
+          <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm">
+            <h3 className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest flex items-center gap-2">
+               <User className="w-4 h-4" /> Assigned Council
+            </h3>
+            {caseData.lawyers ? (
+               <div className="flex items-center gap-4">
+                  <div className="h-14 w-14 rounded-full border-2 border-slate-100 overflow-hidden bg-slate-50 flex items-center justify-center">
+                     {caseData.lawyers.avatar_url ? (
+                        <img src={caseData.lawyers.avatar_url} alt="Lawyer" className="h-full w-full object-cover" />
+                     ) : (
+                        <User className="w-6 h-6 text-slate-300" />
+                     )}
+                  </div>
+                  <div>
+                     <p className="font-bold text-slate-900 text-lg leading-tight">{caseData.lawyers.name}</p>
+                     <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> {caseData.lawyers.location}
+                     </p>
+                  </div>
+               </div>
+            ) : (
+               <div className="flex items-center gap-3 text-slate-400 italic bg-slate-50 p-4 rounded-xl border border-dashed border-slate-200 text-sm">
+                  <Clock className="w-4 h-4" />
+                  <span>Matching in progress...</span>
+               </div>
+            )}
+          </div>
+
+          {/* 4. Details */}
+          <div className="md:col-span-2 bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm">
+            <h3 className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest flex items-center gap-2">
+               <FileText className="w-4 h-4" /> Case Description
+            </h3>
+            <p className="text-slate-700 leading-relaxed font-medium">
+               "{caseData.description}"
+            </p>
+            
+            <div className="mt-8 pt-6 border-t border-slate-100">
+               <h3 className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest flex items-center gap-2">
+                  <Download className="w-4 h-4" /> Evidence
+               </h3>
+               {!caseData.documents || caseData.documents.length === 0 ? (
+                  <span className="text-sm text-slate-400 italic">No documents uploaded.</span>
+               ) : (
+                  <div className="flex gap-2">
+                     {caseData.documents.map((doc, i) => (
+                        <a key={i} href={doc} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition">
+                           <FileText className="w-3 h-3" /> Document {i+1}
+                        </a>
+                     ))}
+                  </div>
+               )}
             </div>
           </div>
 
-          {/* Next Hearing Card */}
-          <div className="bg-white border border-slate-100 p-8 rounded-[2rem] shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">Next Hearing</h3>
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
-                <FiClock size={24} />
-              </div>
-              <div>
-                <p className="font-bold text-slate-800">{caseData.next_hearing}</p>
-                <p className="text-xs text-slate-500 uppercase">District Court, Room 4</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Center */}
         </div>
       </div>
     </div>
-        
   );
 }

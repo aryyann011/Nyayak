@@ -16,6 +16,7 @@ import PoliceProfile from "./pages/police/PoliceProfile";
 import LawyerDashboard from "./pages/lawyer/LawyerDashboard";
 import CaseDetails from "./pages/dashboards/CaseDetails";
 import ProfileRouter from "./pages/ProfileRouter";
+import MyCases from "./pages/dashboards/citizencases";
 
 /* ================= LAYOUTS ================= */
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -33,6 +34,7 @@ import PoliceDashboard from "./pages/police/PoliceDashboard";
 import ComplaintPage from "./pages/dashboards/ComplaintPage";
 import EmergencyLogs from "./pages/EmergencyLogs";
 import FindLawyer from "./pages/dashboards/FindLawyer";
+import Casedetails from "./pages/lawyer/FiledCaseDetail";
 
 /* ================= PAYMENT ================= */
 import PaymentPage from "./pages/PaymentPage";
@@ -40,6 +42,7 @@ import LawyerCaseRequests from "./pages/lawyer/CaseRequest";
 import LawyerDocket from "./pages/lawyer/CaseManagement";
 import CaseDrafts from "./pages/dashboards/CaseDrafts";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import Schedule from "./pages/lawyer/schedule/Schedule";
 function App() {
   return (
     <ThemeProvider>
@@ -83,6 +86,8 @@ function App() {
                 element={<LawyerDashboard />}
               />
               <Route path="/lawyer/requests" element={<LawyerCaseRequests/>} />
+              <Route path="/lawyer/case/:id" element={<Casedetails />} />
+              <Route path="/lawyer/schedule" element={<Schedule/>} />
               <Route
                 path="/lawyer/cases"
                 element={<LawyerDocket />}
@@ -106,7 +111,9 @@ function App() {
               <Route path="/emergency-logs" element={<EmergencyLogs/>} />
               <Route path="/find-lawyer" element={<FindLawyer/>} />
               <Route path="/payment" element={<PaymentPage />} />
-              <Route path="/cases" element={<CaseDetails />} />
+              <Route path="/cases" element={<MyCases />} />
+
+              <Route path="/cases/:id" element={<CaseDetails />} />
               <Route path="/case-drafts" element={<CaseDrafts/>} />
               {/* <Route path="/" */}
             </Route>
