@@ -62,15 +62,15 @@ model.eval()
 # STATIC LEGAL KNOWLEDGE BASE
 # ==========================================
 LEGAL_TERMS = {
-    "fir": "FIR (First Information Report) is the first official record made by police when a cognizable offense is reported under Section 154 CrPC.",
-    "bail": "Bail is a legal arrangement allowing a person to be released from custody pending trial under provisions of CrPC.",
-    "cognizable": "A cognizable offense allows police to arrest without warrant and start investigation without court approval.",
-    "non-cognizable": "A non-cognizable offense requires a warrant and court approval for investigation.",
-    "crpc": "CrPC (Code of Criminal Procedure, 1973) governs criminal procedure in India.",
-    "ipc": "IPC (Indian Penal Code, 1860) defines criminal offenses in India.",
-    "tenant": "Tenant rights are protected under Rent Control Acts and Transfer of Property Act.",
-    "cybercrime": "Cybercrime is punishable under the IT Act 2000 and IPC provisions.",
-    "domestic violence": "Domestic violence is governed under the Protection of Women from Domestic Violence Act, 2005."
+    "fir": "FIR (First Information Report) is recorded under Section 154 CrPC for cognizable offenses.",
+    "bail": "Bail allows temporary release from custody under provisions of CrPC.",
+    "cognizable": "Police can arrest without warrant in cognizable offenses.",
+    "non-cognizable": "Police need court approval in non-cognizable offenses.",
+    "crpc": "CrPC 1973 governs criminal procedure in India.",
+    "ipc": "IPC 1860 defines criminal offenses in India.",
+    "tenant": "Tenant rights are protected under Rent Control Acts.",
+    "cybercrime": "Cybercrime is punishable under the IT Act 2000.",
+    "domestic violence": "Governed under the Protection of Women from Domestic Violence Act, 2005."
 }
 
 
@@ -78,14 +78,11 @@ LEGAL_TERMS = {
 # HELPERS
 # ==========================================
 def extract_text(file_input: str) -> str:
-    """Extract text from PDF or raw string."""
     if not file_input:
         return ""
 
     if isinstance(file_input, str) and file_input.lower().endswith(".pdf"):
-        if not fitz:
-            return ""
-        if not os.path.exists(file_input):
+        if not fitz or not os.path.exists(file_input):
             return ""
 
         text = ""
@@ -99,8 +96,10 @@ def extract_text(file_input: str) -> str:
 
 def get_legal_term_context(query: str) -> str:
     query_lower = query.lower()
-    matches = [definition for term, definition in LEGAL_TERMS.items()
-               if term in query_lower]
+    matches = [
+        definition for term, definition in LEGAL_TERMS.items()
+        if term in query_lower
+    ]
     return " ".join(matches)
 
 
@@ -110,17 +109,12 @@ def retrieve_faiss_context(query: str, k: int = 3):
 
     try:
         docs_with_scores = vectorstore.similarity_search_with_score(query, k=k)
-
-        # Filter weak matches
         filtered_docs = [(doc, score) for doc, score in docs_with_scores if score < 1.2]
 
         texts = [doc.page_content for doc, _ in filtered_docs]
-        sources = list(
-            set(doc.metadata.get("source", "unknown") for doc, _ in filtered_docs)
-        )
+        sources = list(set(doc.metadata.get("source", "unknown") for doc, _ in filtered_docs))
 
         return texts, sources
-
     except Exception:
         return [], []
 
@@ -129,18 +123,15 @@ def retrieve_faiss_context(query: str, k: int = 3):
 # MAIN RAG FUNCTION
 # ==========================================
 def ask_question_with_doc(query: str, uploaded_input: str = None):
-    """
-    Main RAG pipeline with Guardrails, Context Retrieval, and Dynamic Length Control.
-    """
+
     query_clean = query.strip().lower()
 
     # ==========================================
-    # 1️⃣ Basic Guardrails (Fast exits)
+    # 1️⃣ SMART GUARDRAILS
     # ==========================================
-    greetings = ["hello", "hi", "hey", "good morning", "good evening", "namaste"]
-    thanks = ["thanks", "thank you", "shukriya"]
 
-    if query_clean in greetings:
+    # Greeting variations (hi, hii, hellooo, heyyy)
+    if re.match(r"^(hi+|hello+|hey+|namaste+)", query_clean):
         return {
             "answer": "Hello! I am NyaySetu AI. How can I assist you with your legal question today?",
             "sources": [],
@@ -148,15 +139,8 @@ def ask_question_with_doc(query: str, uploaded_input: str = None):
             "disclaimer": ""
         }
 
-    if len(query_clean) < 3:
-        return {
-            "answer": "I'm sorry, I didn't quite catch that. Could you please provide more details about your legal query?",
-            "sources": [],
-            "confidence": 100,
-            "disclaimer": ""
-        }
-
-    if any(word in query_clean for word in thanks):
+    # Thanks variations
+    if re.search(r"(thank|thanks|shukriya)", query_clean):
         return {
             "answer": "You're very welcome! Feel free to ask if you have any more legal questions.",
             "sources": [],
@@ -164,12 +148,21 @@ def ask_question_with_doc(query: str, uploaded_input: str = None):
             "disclaimer": ""
         }
 
-    # Normalize specific common vague queries
-    if "what if i arrest" in query_clean or "arrest" in query_clean and len(query_clean.split()) < 5:
-        query = "What should I do if I am arrested in India and what are my basic rights?"
+    # Very short meaningless queries
+    if len(query_clean.split()) <= 2:
+        return {
+            "answer": "Could you please describe your legal issue in more detail?",
+            "sources": [],
+            "confidence": 100,
+            "disclaimer": ""
+        }
+
+    # Normalize vague arrest queries
+    if "arrest" in query_clean and len(query_clean.split()) < 6:
+        query = "What should I do if I am arrested in India and what are my legal rights?"
 
     # ==========================================
-    # 2️⃣ Context Retrieval
+    # 2️⃣ CONTEXT RETRIEVAL
     # ==========================================
     uploaded_text = extract_text(uploaded_input)
     legal_term_context = get_legal_term_context(query)
@@ -178,7 +171,7 @@ def ask_question_with_doc(query: str, uploaded_input: str = None):
     context_parts = []
 
     if uploaded_text.strip():
-        context_parts.append("[UPLOADED DOCUMENT]\n" + uploaded_text[:1500])
+        context_parts.append("[UPLOADED DOCUMENT]\n" + uploaded_text[:1200])
 
     if legal_term_context:
         context_parts.append("[LEGAL DEFINITIONS]\n" + legal_term_context)
@@ -186,32 +179,37 @@ def ask_question_with_doc(query: str, uploaded_input: str = None):
     if faiss_texts:
         context_parts.append("[LEGAL PROCEDURES]\n" + "\n".join(text[:800] for text in faiss_texts))
 
-    context = "\n\n".join(context_parts) if context_parts else "No specific legal documents retrieved."
+    context = "\n\n".join(context_parts) if context_parts else "No relevant legal context found."
+
 
     # ==========================================
-    # 3️⃣ Dynamic Length Control
+    # 3️⃣ DYNAMIC LENGTH CONTROL
     # ==========================================
     word_count = len(query.split())
-    if word_count <= 5:
-        max_tokens = 150
-    elif word_count <= 15:
+
+    if word_count <= 8:
+        max_tokens = 120
+    elif word_count <= 20:
         max_tokens = 250
     else:
-        max_tokens = 450
+        max_tokens = 400
+
 
     # ==========================================
-    # 4️⃣ LLM Prompting & Generation
+    # 4️⃣ LLM PROMPTING
     # ==========================================
-    system_prompt = """You are a professional Indian legal assistant. 
+    system_prompt = """You are a professional Indian legal assistant.
+
 Guidelines:
-- Answer based on the complexity of the question.
-- Use simple and practical language.
-- If the question is simple, respond briefly (2–3 sentences).
-- Provide moderate detail only when necessary.
-- Do not hallucinate laws; if unsure, advise consulting a lawyer.
-- Mention specific sections like CrPC or IPC only if they are in the context."""
+- Use clear and practical language.
+- Answer briefly if the question is simple.
+- Provide moderate explanation only if necessary.
+- Do not hallucinate laws.
+- If unsure, advise consulting a qualified lawyer.
+- Only mention specific legal sections if present in context.
+"""
 
-    prompt = f"<|system|>\n{system_prompt}</s>\n<|user|>\nContext: {context}\n\nQuestion: {query}</s>\n<|assistant|>\n"
+    prompt = f"<|system|>\n{system_prompt}</s>\n<|user|>\nContext:\n{context}\n\nQuestion: {query}</s>\n<|assistant|>\n"
 
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
 
@@ -219,9 +217,9 @@ Guidelines:
         outputs = model.generate(
             **inputs,
             max_new_tokens=max_tokens,
-            temperature=0.3,
-            top_p=0.85,
-            repetition_penalty=1.15,
+            temperature=0.2,
+            top_p=0.8,
+            repetition_penalty=1.2,
             eos_token_id=tokenizer.eos_token_id
         )
 
@@ -229,17 +227,17 @@ Guidelines:
     answer = tokenizer.decode(generated, skip_special_tokens=True).strip()
 
     # ==========================================
-    # 5️⃣ Clean Output
+    # 5️⃣ CLEAN OUTPUT
     # ==========================================
-    # We remove bolding and clean spacing to fit your "flowing paragraph" requirement
     answer = re.sub(r"\*\*.*?\*\*", "", answer)
     answer = re.sub(r"\s+", " ", answer).strip()
 
-    if not answer or len(answer) < 10:
-        answer = "I am unable to provide a specific legal answer based on the current context. Please provide more details or consult a legal professional."
+    if not answer or len(answer) < 15:
+        answer = "I am unable to provide a clear legal answer based on the available context. Please consult a qualified legal professional."
+
 
     # ==========================================
-    # 6️⃣ Confidence & Return
+    # 6️⃣ CONFIDENCE SCORE
     # ==========================================
     if faiss_texts:
         confidence = 90
@@ -248,9 +246,11 @@ Guidelines:
     else:
         confidence = 65
 
+
     return {
         "answer": answer,
-        "disclaimer": "This is an AI-generated informational response based on Indian Law. It is not legal advice.",
+        "sources": sources,
+        "disclaimer": "This is an AI-generated informational response based on Indian law. It is not legal advice.",
         "confidence": confidence
     }
-##lelo
+
