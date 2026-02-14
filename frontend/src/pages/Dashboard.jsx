@@ -4,7 +4,7 @@ import { useAuth } from "../context/Authcontext";
 import { getProfile } from "../lib/profileService"; 
 
 // Import the sub-dashboards (We will build these next)
-import CitizenDashboard from "./dashboards/CitizenDashboard";
+import CitizenDashboard from "./citizen/CitizenDashboard";
 import LawyerDashboard from "./lawyer/LawyerDashboard";
 // import PoliceDashboard from "./dashboards/PoliceDashboard"; // Placeholder
 // import LawyerDashboard from "./dashboards/LawyerDashboard"; // Placeholder

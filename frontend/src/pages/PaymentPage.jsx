@@ -2,33 +2,39 @@ import { useState, useEffect } from "react";
 import { FiShield, FiArrowLeft, FiInfo, FiLock, FiCheckCircle } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useNotification } from "../context/NotificationContext"; // <--- Import Context
 
 export default function PaymentPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { sendNotification } = useNotification(); // <--- Init Hook
+  
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   
   // State to hold real data
   const [details, setDetails] = useState({
-    amount: location.state?.amount || 5000, // Default fallback
+    amount: location.state?.amount || 5000, 
     caseTitle: "Loading...",
     lawyerName: "Loading...",
-    caseId: location.state?.caseId
+    caseId: location.state?.caseId,
+    lawyerId: null // <--- Needed for notification
   });
 
   // --- FETCH REAL CASE DETAILS ---
   useEffect(() => {
     if (!details.caseId) {
-        navigate('/cases'); // Redirect if no ID provided
+        navigate('/my-cases'); 
         return;
     }
 
     const fetchDetails = async () => {
+        // Fetch Title AND Lawyer ID so we can notify them later
         const { data, error } = await supabase
             .from('cases')
             .select(`
                 title, 
+                lawyer_id,
                 lawyer:lawyers ( name )
             `)
             .eq('id', details.caseId)
@@ -38,7 +44,8 @@ export default function PaymentPage() {
             setDetails(prev => ({
                 ...prev,
                 caseTitle: data.title,
-                lawyerName: data.lawyer?.name || "Assigned Counsel"
+                lawyerName: data.lawyer?.name || "Assigned Counsel",
+                lawyerId: data.lawyer_id
             }));
         }
         setFetching(false);
@@ -51,7 +58,7 @@ export default function PaymentPage() {
   const handlePayment = async () => {
     setLoading(true);
     
-    // 1. Simulate Gateway Delay (2 seconds)
+    // 1. Simulate Gateway
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // 2. Update Supabase
@@ -69,7 +76,18 @@ export default function PaymentPage() {
     if (error) {
         alert("Payment verification failed. Please try again.");
     } else {
-        // 3. Navigate to Success
+        // 3. Notify the Lawyer
+        if (details.lawyerId) {
+            await sendNotification(
+                details.lawyerId,
+                "Retainer Received",
+                "Payment confirmed. The case is now Active.",
+                "success",
+                "/lawyer/cases"
+            );
+        }
+
+        // 4. Navigate to Success
         navigate('/payment-success', { 
             state: { 
                 transactionId: `TXN-${Math.floor(Math.random() * 1000000)}`,
@@ -84,7 +102,6 @@ export default function PaymentPage() {
       
       {/* LEFT: CONTEXT & SUMMARY */}
       <div className="w-full md:w-5/12 bg-[#0F172A] p-10 md:p-16 text-white flex flex-col justify-between relative overflow-hidden">
-        {/* Decorative Circle */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500 rounded-full blur-[100px] opacity-10 translate-x-1/3 -translate-y-1/3 pointer-events-none"></div>
 
         <div>
@@ -135,7 +152,6 @@ export default function PaymentPage() {
       <div className="w-full md:w-7/12 flex items-center justify-center p-8 bg-slate-50">
         <div className="w-full max-w-md">
           <div className="bg-white border border-slate-200 rounded-[2rem] shadow-xl p-10 relative">
-            
             <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-100">
               <h2 className="text-xl font-bold text-slate-800">Total Due</h2>
               <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
@@ -171,7 +187,6 @@ export default function PaymentPage() {
               )}
             </button>
 
-            {/* Trust Badges */}
             <div className="mt-10 grid grid-cols-3 gap-6 opacity-40 grayscale items-center">
               <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="Paypal" className="h-6 mx-auto" />
               <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Visa.svg" alt="Visa" className="h-4 mx-auto" />

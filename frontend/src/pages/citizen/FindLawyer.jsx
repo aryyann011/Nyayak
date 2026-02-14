@@ -5,9 +5,11 @@ import {
   ShieldCheck, ChevronRight, Loader2, Scale, User, Building2
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { useNotification } from "../../context/NotificationContext"; // <--- Import Context
 
 const FindLawyer = () => {
   const locationState = useLocation().state;
+  const { sendNotification } = useNotification(); // <--- Init Hook
   const navigate = useNavigate();
   const caseId = locationState?.caseId; 
 
@@ -22,8 +24,6 @@ const FindLawyer = () => {
   useEffect(() => {
     const fetchLawyers = async () => {
       setLoading(true);
-      
-      // Fetch verified lawyers
       let query = supabase.from('lawyers').select('*').eq('is_available', true);
       
       if (selectedFilter !== "All") {
@@ -32,7 +32,7 @@ const FindLawyer = () => {
 
       const { data, error } = await query;
       if (error) {
-        console.error("Error fetching lawyers:", error);
+        console.error("Error:", error);
       } else {
         const sortedData = data?.sort((a, b) => 
           a.name.includes("(Demo)") ? -1 : 1
@@ -55,7 +55,7 @@ const FindLawyer = () => {
     setRequestingId(lawyerId);
 
     try {
-      // Logic: Assign Lawyer ID AND update Status
+      // 1. Assign Lawyer ID & Update Status
       const { error } = await supabase
         .from('cases')
         .update({ 
@@ -66,12 +66,20 @@ const FindLawyer = () => {
 
       if (error) throw error;
 
+      // 2. Notify the Lawyer
+      await sendNotification(
+         lawyerId, 
+         "New Case Request", 
+         "A citizen has requested your legal representation.", 
+         "info",
+         "/lawyer/requests"
+      );
+
       alert("Request Sent! The lawyer has been notified.");
       navigate('/my-cases');
     } catch (err) {
       console.error("Hire Error:", err);
-      // If this alerts, the SQL Policy in Step 1 was not run correctly
-      alert("Failed to send request. Database permission denied.");
+      alert("Failed to send request. Please check your connection.");
     } finally {
       setRequestingId(null);
     }
@@ -135,7 +143,6 @@ const FindLawyer = () => {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {filteredLawyers.map((lawyer) => (
               <div key={lawyer.id} className="bg-white border border-slate-200 hover:border-slate-400 transition-all duration-300 flex flex-col md:flex-row group">
-                
                 <div className="w-full md:w-52 bg-slate-50 p-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100">
                   <div className="relative">
                     <div className="w-24 h-24 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center overflow-hidden shadow-sm">
@@ -164,7 +171,7 @@ const FindLawyer = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                         <div className="text-[10px] font-bold text-slate-400 uppercase">Hourly Rate</div>
+                         <div className="text-[10px] font-bold text-slate-400 uppercase">Rate</div>
                          <div className="text-lg font-bold text-slate-900 leading-none mt-1">{lawyer.hourly_rate}<span className="text-xs text-slate-400 font-normal">/hr</span></div>
                       </div>
                     </div>

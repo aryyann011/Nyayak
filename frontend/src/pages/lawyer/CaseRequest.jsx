@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Briefcase, Clock, FileText, CheckCircle, XCircle, 
-  User, MapPin, Loader2, Scale 
+import {
+  Briefcase, Clock, FileText, CheckCircle, XCircle,
+  User, MapPin, Loader2, Scale
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/Authcontext";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { useNotification } from "../../context/NotificationContext";
 
 const LawyerCaseRequests = () => {
-  const navigate = useNavigate()
+  const { sendNotification } = useNotification();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,15 +20,15 @@ const LawyerCaseRequests = () => {
   const fetchRequests = async () => {
     if (!user) return;
     setLoading(true);
-    
+
     const { data, error } = await supabase
       .from('cases')
       .select(`
         *,
-        profiles ( 
-          full_name, 
-          email, 
-          phone 
+        profiles (
+          full_name,
+          email,
+          phone
         )
       `)
       .eq('status', 'Pending Acceptance')
@@ -43,7 +45,7 @@ const LawyerCaseRequests = () => {
 
   useEffect(() => {
     fetchRequests();
-    
+
     const channel = supabase
       .channel('lawyer_requests_channel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cases', filter: `lawyer_id=eq.${user?.id}` }, () => fetchRequests())
@@ -53,12 +55,25 @@ const LawyerCaseRequests = () => {
   }, [user]);
 
   // --- LOGIC: HANDLERS ---
-  const handleAccept = async (caseId) => {
-    const { error } = await supabase.from('cases').update({ status: 'Payment Pending' }).eq('id', caseId);
+  const handleAccept = async (caseItem) => { // Accept the whole item to get user_id
+    const { error } = await supabase.from('cases').update({ status: 'Payment Pending' }).eq('id', caseItem.id);
+    
     if (!error) {
         toast.success("Case Accepted");
-        fetchRequests(); 
+        fetchRequests();
+        
+        // Notify the Citizen
+        if (caseItem.user_id) {
+            await sendNotification(
+                caseItem.user_id, // Get ID from the case object
+                "Representation Accepted",
+                "Your lawyer has reviewed and accepted your case.",
+                "success",
+                `/cases/${caseItem.id}`
+            );
+        }
     } else {
+        console.error(error);
         toast.error("Error accepting case");
     }
   };
@@ -69,12 +84,14 @@ const LawyerCaseRequests = () => {
     if (!error) {
         toast.info("Request Rejected");
         fetchRequests();
+    } else {
+        toast.error("Error declining request");
     }
   };
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen font-sans">
-      
+
       {/* Header */}
       <div className="flex justify-between items-center mb-8 max-w-6xl mx-auto">
         <div>
@@ -99,11 +116,11 @@ const LawyerCaseRequests = () => {
            </div>
         ) : (
            requests.map((item) => (
-             <div key={item.id} onClick={() => navigate(`/lawyer/case/${item.id}`)} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition group">
-                
+             <div key={item.id} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition group">
+
                 {/* Top Section */}
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                   
+
                    {/* Left: Icon & Title */}
                    <div className="flex items-start gap-4">
                       <div className="p-3 bg-gray-100 rounded-xl group-hover:bg-orange-50 transition">
@@ -147,7 +164,7 @@ const LawyerCaseRequests = () => {
 
                 {/* Bottom Section: Footer & Actions */}
                 <div className="mt-6 pt-6 border-t border-gray-50 flex flex-col md:flex-row items-center justify-between gap-4">
-                   
+
                    {/* Meta Data */}
                    <div className="flex items-center gap-6 w-full md:w-auto">
                       <div className="flex items-center gap-2">
@@ -160,17 +177,23 @@ const LawyerCaseRequests = () => {
 
                    {/* Action Buttons */}
                    <div className="flex gap-3 w-full md:w-auto">
-                      <button 
-                        onClick={() => handleReject(item.id)} 
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleReject(item.id); }} // Stop prop to avoid navigating
                         className="px-6 py-2.5 border border-gray-200 text-gray-500 font-bold rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all flex items-center justify-center gap-2"
                       >
-                          Decline
+                         Decline
                       </button>
-                      <button 
-                        onClick={() => handleAccept(item.id)} 
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleAccept(item); }} // Pass item, stop prop
                         className="bg-gray-900 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-[#ff4d00] transition-all shadow-sm flex items-center justify-center gap-2"
                       >
-                          Accept Case
+                         Accept Case
+                      </button>
+                      <button
+                        onClick={() => navigate(`/lawyer/case/${item.id}`)}
+                        className="px-4 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all text-xs uppercase tracking-wider"
+                      >
+                         View Details
                       </button>
                    </div>
 

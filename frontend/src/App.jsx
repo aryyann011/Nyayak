@@ -4,7 +4,7 @@ import { Routes, Route, BrowserRouter, Outlet } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/Login";
 import SignupPage from "./pages/SignupPage";
-
+import { NotificationProvider } from "./context/NotificationContext";
 import Dashboard from "./pages/Dashboard";
 import SafetyMap from "./pages/SafetyMap";
 import Chat from "./pages/Chat";
@@ -14,9 +14,9 @@ import IncidentReports from "./pages/police/IncidentReports";
 import PoliceProfile from "./pages/police/PoliceProfile";
 
 import LawyerDashboard from "./pages/lawyer/LawyerDashboard";
-import CaseDetails from "./pages/dashboards/CaseDetails";
+import CaseDetails from "./pages/citizen/CaseDetails";
 import ProfileRouter from "./pages/ProfileRouter";
-import MyCases from "./pages/dashboards/citizencases";
+import MyCases from "./pages/citizen/citizencases";
 
 /* ================= LAYOUTS ================= */
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -31,22 +31,23 @@ import { AuthProvider } from "./context/Authcontext";
 /* ================= ROUTE PROTECTION ================= */
 import ProtectedRoute from "./components/ProtectedRoute";
 import PoliceDashboard from "./pages/police/PoliceDashboard";
-import ComplaintPage from "./pages/dashboards/ComplaintPage";
+import ComplaintPage from "./pages/citizen/ComplaintPage";
 import EmergencyLogs from "./pages/EmergencyLogs";
-import FindLawyer from "./pages/dashboards/FindLawyer";
+import FindLawyer from "./pages/citizen/FindLawyer";
 import Casedetails from "./pages/lawyer/FiledCaseDetail";
 
 /* ================= PAYMENT ================= */
 import PaymentPage from "./pages/PaymentPage";
 import LawyerCaseRequests from "./pages/lawyer/CaseRequest";
 import LawyerDocket from "./pages/lawyer/CaseManagement";
-import CaseDrafts from "./pages/dashboards/CaseDrafts";
+import CaseDrafts from "./pages/citizen/CaseDrafts";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Schedule from "./pages/lawyer/schedule/Schedule";
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <NotificationProvider>
         <BrowserRouter>
           <Routes>
 
@@ -141,6 +142,7 @@ function App() {
 
           </Routes>
         </BrowserRouter>
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   );
