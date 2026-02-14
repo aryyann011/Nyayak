@@ -11,9 +11,11 @@ import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
 import PoliceLayout from "./layouts/PoliceLayout";
 import IncidentReports from "./pages/police/IncidentReports";
+import PoliceProfile from "./pages/police/PoliceProfile";
 
 import LawyerDashboard from "./pages/lawyer/LawyerDashboard";
 import CaseDetails from "./pages/dashboards/CaseDetails";
+import ProfileRouter from "./pages/ProfileRouter";
 
 /* ================= LAYOUTS ================= */
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -23,7 +25,7 @@ import ProfileLayout from "./layouts/ProfileLayout";
 /* ================= CONTEXT ================= */
 import { ThemeProvider } from "./context/themeContext";
 import { AuthProvider } from "./context/Authcontext";
-import LawyerProfile from "./pages/dashboards/LawyerDetails";
+// removed duplicate LawyerProfile import from LawyerDetails
 
 /* ================= ROUTE PROTECTION ================= */
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -62,6 +64,7 @@ function App() {
             >
               <Route path="/police-dashboard" element={<PoliceDashboard />} />
               <Route path="/police/reports" element={<IncidentReports/>} />
+              <Route path="/police/profile" element={<PoliceProfile/>} />
               {/* Add other police pages here later */}
             </Route>
 
@@ -118,7 +121,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile" element={<ProfileRouter />} />
               <Route
                 path="/profile/security"
                 element={

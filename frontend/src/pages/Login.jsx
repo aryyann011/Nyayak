@@ -37,9 +37,9 @@ const LoginPage = () => {
                 const role = user?.user_metadata?.role || session?.user?.user_metadata?.role;
 
                 if (role === 'police') {
-                    navigate('/police-dashboard', { replace: true });
+                    navigate('/police/profile', { replace: true });
                 } else if (role === 'lawyer') {
-                    navigate('/lawyer/legal-dashboard', { replace: true });
+                    navigate('/profile', { replace: true });
                 } else {
                     navigate('/dashboard', { replace: true });
                 }

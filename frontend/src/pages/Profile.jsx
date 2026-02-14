@@ -4,7 +4,6 @@ import { useTheme } from "../context/themeContext";
 import { useAuth } from "../context/Authcontext";
 import { supabase } from "../lib/supabase";
 import Navbar from "../components/Navbar";
-import { motion } from "framer-motion";
 import {
   User,
   Mail,
@@ -35,7 +34,7 @@ function VerifiedBadge({ verified }) {
 
 export default function Profile() {
   const { isDark } = useTheme();
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [firCount, setFirCount] = useState(0);
@@ -46,7 +45,7 @@ export default function Profile() {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isDirty },
+    formState: { isDirty },
     watch,
   } = useForm({
     defaultValues: {
@@ -86,7 +85,7 @@ export default function Profile() {
 
   useEffect(() => {
     reset((prev) => ({ ...prev, home_station: computeHomeStation(address) }));
-  }, [address]);
+  }, [address, computeHomeStation, reset]);
 
   useEffect(() => {
     let mounted = true;
@@ -130,7 +129,8 @@ export default function Profile() {
           setFirCount(Array.isArray(firs) ? firs.length : 0);
           setDraftCount(Array.isArray(drafts) ? drafts.length : 0);
         }
-      } catch (_err) {
+      } catch (err) {
+        console.error(err);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -168,7 +168,9 @@ export default function Profile() {
               phone: values.phone,
             },
           });
-        } catch (_e) {}
+        } catch (e) {
+          console.error(e);
+        }
       } else {
         try {
           await supabase.auth.updateUser({
@@ -177,7 +179,9 @@ export default function Profile() {
               phone: values.phone,
             },
           });
-        } catch (_e) {}
+        } catch (e) {
+          console.error(e);
+        }
       }
       reset({ ...values, home_station: computeHomeStation(values.address), user_id: user.id });
     } finally {
@@ -187,7 +191,7 @@ export default function Profile() {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-500 font-sans overflow-hidden relative ${
+      className={`min-h-screen transition-colors duration-500 font-sans overflow-y-auto relative ${
         isDark ? "bg-[#0B1120] text-slate-100" : "bg-[#FFFAF0] text-slate-900"
       }`}
     >
@@ -213,7 +217,7 @@ export default function Profile() {
       <div className="relative z-10">
         {/* <Navbar /> */}
         <div className="h-24" />
-        <div className="max-w-7xl mx-auto px-6 py-24">
+        <div className="max-w-7xl mx-auto px-6 py-16">
         <div
           className={`mb-8 flex items-center justify-between px-6 py-4 rounded-2xl border backdrop-blur-md ${
             isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"
@@ -261,7 +265,7 @@ export default function Profile() {
               <label className="space-y-2">
                 <span className="text-sm">Full Name</span>
                 <input
-                  className="w-full px-4 py-2 rounded-lg border bg-transparent"
+                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
                   {...register("full_name", { required: true })}
                 />
               </label>
@@ -270,7 +274,7 @@ export default function Profile() {
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-slate-500" />
                   <input
-                    className="w-full px-4 py-2 rounded-lg border bg-transparent"
+                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
                     {...register("email", { required: true })}
                   />
                 </div>
@@ -280,7 +284,7 @@ export default function Profile() {
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-slate-500" />
                   <input
-                    className="w-full px-4 py-2 rounded-lg border bg-transparent"
+                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
                     {...register("phone", { required: true })}
                   />
                 </div>
@@ -289,7 +293,7 @@ export default function Profile() {
                 <span className="text-sm">User ID</span>
                 <input
                   disabled
-                  className="w-full px-4 py-2 rounded-lg border bg-transparent"
+                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10"
                   {...register("user_id")}
                 />
               </label>
@@ -317,14 +321,16 @@ export default function Profile() {
               <FileText className="w-5 h-5 text-orange-500" />
               <h2 className="text-lg font-bold">Activity Snapshot</h2>
             </div>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span>FIRs Filed</span>
-                <span className="font-bold">{firCount} Open Cases</span>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl border border-slate-200/50 dark:border-white/10 bg-white/70 dark:bg-white/5">
+                <div className="text-xs uppercase font-bold text-slate-500 mb-1">FIRs Filed</div>
+                <div className="text-2xl font-extrabold">{firCount}</div>
+                <div className="text-xs text-slate-500">Open Cases</div>
               </div>
-              <div className="flex items-center justify-between">
-                <span>Documents Drafted</span>
-                <span className="font-bold">{draftCount} Saved Drafts</span>
+              <div className="p-4 rounded-xl border border-slate-200/50 dark:border-white/10 bg-white/70 dark:bg-white/5">
+                <div className="text-xs uppercase font-bold text-slate-500 mb-1">Documents</div>
+                <div className="text-2xl font-extrabold">{draftCount}</div>
+                <div className="text-xs text-slate-500">Saved Drafts</div>
               </div>
             </div>
           </section>
@@ -345,7 +351,7 @@ export default function Profile() {
                   <Calendar className="w-4 h-4 text-slate-500" />
                   <input
                     type="date"
-                    className="w-full px-4 py-2 rounded-lg border bg-transparent"
+                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
                     {...register("dob", { required: true })}
                   />
                 </div>
@@ -353,7 +359,7 @@ export default function Profile() {
               <label className="space-y-2">
                 <span className="text-sm">Gender</span>
                 <select
-                  className="w-full px-4 py-2 rounded-lg border bg-transparent"
+                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
                   {...register("gender", { required: true })}
                 >
                   <option value="">Select</option>
@@ -367,7 +373,7 @@ export default function Profile() {
                 <div className="flex items-center gap-2">
                   <Home className="w-4 h-4 text-slate-500" />
                   <input
-                    className="w-full px-4 py-2 rounded-lg border bg-transparent"
+                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
                     placeholder="House, Street, City, State"
                     {...register("address", { required: true })}
                   />
@@ -377,7 +383,7 @@ export default function Profile() {
                 <span className="text-sm">Home Station</span>
                 <input
                   disabled
-                  className="w-full px-4 py-2 rounded-lg border bg-transparent"
+                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10"
                   {...register("home_station")}
                 />
               </div>

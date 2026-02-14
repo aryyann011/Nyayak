@@ -7,7 +7,8 @@ import {
   LayoutDashboard, 
   FileText, 
   Radio,
-  Settings
+  Settings,
+  User
 } from "lucide-react";
 import { useAuth } from "../../context/Authcontext";
 
@@ -28,6 +29,7 @@ const PoliceSidebar = ({ isOpen, toggleSidebar }) => {
   const POLICE_LINKS = [
     { icon: LayoutDashboard, label: "Dispatch Map", path: "/police-dashboard" },
     { icon: FileText, label: "Incident Reports", path: "/police/reports" },
+    { icon: User, label: "Profile", path: "/police/profile" },
     { icon: Radio, label: "Unit Logs", path: "/police/logs" },
     { icon: Settings, label: "Settings", path: "/police/settings" },
   ];
