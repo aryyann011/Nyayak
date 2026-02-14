@@ -14,7 +14,7 @@ import IncidentReports from "./pages/police/IncidentReports";
 
 import LawyerDashboard from "./pages/lawyer/LawyerDashboard";
 import CaseManagement from "./pages/lawyer/CaseManagement";
-import CaseDetails from "./pages/CaseDetails";
+import CaseDetails from "./pages/dashboards/CaseDetails";
 
 /* ================= LAYOUTS ================= */
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -31,7 +31,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PoliceDashboard from "./pages/police/PoliceDashboard";
 import ComplaintPage from "./pages/ComplaintPage";
 import EmergencyLogs from "./pages/EmergencyLogs";
-import FindLawyer from "./pages/lawyer/FindLawyer";
+import FindLawyer from "./pages/dashboards/FindLawyer";
 
 /* ================= PAYMENT ================= */
 import PaymentPage from "./pages/PaymentPage";
