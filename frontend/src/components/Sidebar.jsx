@@ -7,18 +7,16 @@ import {
   ChevronRight,
   LayoutDashboard, 
   FileText, 
-  ShieldAlert, 
   Map, 
-  MessageSquare
+  MessageSquare,
+  FilePlus // New Icon for Complaint
 } from "lucide-react";
 import { useAuth } from "../context/Authcontext";
-import { useTheme } from "../context/themeContext"; // Check if you need this for conditional rendering, usually CSS classes handle it
 
-// Default Citizen Links (Fallback)
 const CITIZEN_LINKS = [
   { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
+  { icon: FilePlus, label: "File Complaint", path: "/complaint" },
   { icon: FileText, label: "My Cases", path: "/cases" },
-  { icon: ShieldAlert, label: "Emergency", path: "/sos" },
   { icon: Map, label: "Safety Map", path: "/map" },
   { icon: MessageSquare, label: "Legal Assistant", path: "/chat" },
 ];
@@ -31,6 +29,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, links = CITIZEN_LINKS, roleLabel 
     const name = user?.user_metadata?.full_name || "User";
     return name.substring(0, 2).toUpperCase();
   };
+
   const handleLogout = async () => {
     await logout();
     navigate("/");
@@ -41,12 +40,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar, links = CITIZEN_LINKS, roleLabel 
   };
 
   return (
+    // CHANGE 1: Removed 'fixed left-0 top-0'. Added 'relative' and 'shrink-0'.
     <aside 
-      className={`fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300 ease-in-out border-r
+      className={`relative h-screen flex flex-col z-50 transition-all duration-300 ease-in-out border-r shrink-0
         ${isCollapsed ? "w-20" : "w-64"}
-        /* LIGHT MODE: Warm Cream Background & Orange Border */
         bg-[#FFFAF0] border-orange-100 
-        /* DARK MODE: Deep Slate Background & Dark Border */
         dark:bg-[#111827] dark:border-slate-800 dark:text-slate-400
       `}
     >
@@ -78,10 +76,10 @@ const Sidebar = ({ isCollapsed, toggleSidebar, links = CITIZEN_LINKS, roleLabel 
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[16px] font-bold transition-all duration-200 group relative
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[15px] font-bold transition-all duration-200 group relative
               ${isActive
-                ? "text-orange-800 shadow-md dark:from-white dark:to-slate-200 dark:text-slate-900" 
-                : "text-slate-600 hover:bg-orange-50 hover:text-orange-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                ? "text-orange-800 bg-orange-50 dark:from-white dark:to-slate-200 dark:text-slate-900 shadow-sm border border-orange-100 dark:border-transparent" 
+                : "text-slate-600 hover:bg-white hover:text-orange-800 hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               } ${isCollapsed ? "justify-center" : ""}`
             }
           >
@@ -121,26 +119,25 @@ const Sidebar = ({ isCollapsed, toggleSidebar, links = CITIZEN_LINKS, roleLabel 
             {getUserInitials()}
           </div>
           {!isCollapsed && (
-            <Link to='/profile'>
             <div className="flex-1 min-w-0 overflow-hidden">
-              <p className="text-sm font-bold truncate text-slate-800 dark:text-white">
-                {getUserName()}
-              </p>
-              <p className="text-xs truncate text-slate-500 dark:text-slate-500 font-medium">
-                {roleLabel} Account
-              </p>
+               <Link to='/profile'>
+                  <p className="text-sm font-bold truncate text-slate-800 dark:text-white">
+                    {getUserName()}
+                  </p>
+                  <p className="text-xs truncate text-slate-500 dark:text-slate-500 font-medium">
+                    {roleLabel} Account
+                  </p>
+               </Link>
             </div>
-            </Link>
           )}
           {!isCollapsed && (
-            
-                <button 
-                onClick={handleLogout} 
-                className="p-1.5 rounded-md cursor-pointer text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
-                title="Sign Out"
-                >
-                <LogOut className="w-4 h-4 shrink-0" />
-                </button>
+            <button 
+              onClick={handleLogout} 
+              className="p-1.5 rounded-md cursor-pointer text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+            </button>
           )}
         </div>
       </div>

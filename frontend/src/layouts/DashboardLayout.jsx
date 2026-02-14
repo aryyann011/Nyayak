@@ -1,26 +1,44 @@
 import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
-import DashboardNavbar from "../components/DashboardNavbar"; // ✅ UPDATED IMPORT
+import DashboardNavbar from "../components/DashboardNavbar";
+import EmergencyModal from "../components/EmergencyModal";
 
 const DashboardLayout = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6] dark:bg-[#0B1120] transition-colors duration-300">
-      <Sidebar 
-        isCollapsed={isSidebarCollapsed} 
-        toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+    <div className="flex h-screen overflow-hidden transition-colors duration-300
+      /* LIGHT MODE: Standard Light Grey (Not Cream) */
+      bg-slate-50 
+      /* DARK MODE: Deep Navy */
+      dark:bg-[#0f172a]
+    ">
+      
+      {/* 1. Modal (Global Overlay) */}
+      <EmergencyModal 
+        isOpen={isEmergencyOpen} 
+        onClose={() => setIsEmergencyOpen(false)} 
       />
 
-      <div 
-        className={`min-h-screen flex flex-col transition-all duration-300 ease-in-out ${
-          isSidebarCollapsed ? "ml-20" : "ml-64"
-        }`}
-      >
-        {/* ✅ USE NEW NAVBAR */}
-        <DashboardNavbar toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
-
-        <main className="flex-1 p-8 overflow-y-auto">
+      {/* 2. Sidebar (Fixed/Relative height) */}
+      <Sidebar 
+        isCollapsed={isSidebarCollapsed} 
+        toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      />
+      
+      {/* 3. Main Content Wrapper */}
+      {/* CHANGE: Added 'overflow-y-auto' HERE. This makes the whole right side scroll. */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto h-screen scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+        
+        {/* Navbar is now part of the scroll flow */}
+        <DashboardNavbar 
+           toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 
+           onEmergencyClick={() => setIsEmergencyOpen(true)}
+        />
+        
+        {/* Main content just expands */}
+        <main className="flex-1 p-6 md:p-8">
           {children}
         </main>
       </div>
