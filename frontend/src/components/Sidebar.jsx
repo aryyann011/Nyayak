@@ -116,6 +116,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, links = CITIZEN_LINKS, roleLabel 
         `}>
           <div className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold
             bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-sm
+
             dark:from-slate-700 dark:to-slate-600 dark:text-white
           ">
             {getUserInitials()}

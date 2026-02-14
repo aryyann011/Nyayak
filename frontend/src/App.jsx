@@ -95,7 +95,6 @@ function App() {
               <Route path="/complaint" element={<ComplaintPage/>} />
               <Route path="/emergency-logs" element={<EmergencyLogs/>} />
               <Route path="/find-lawyer" element={<FindLawyer/>} />
-              <Route path="/"
             </Route>
 
             {/* ================= PROFILE ROUTES ================= */}

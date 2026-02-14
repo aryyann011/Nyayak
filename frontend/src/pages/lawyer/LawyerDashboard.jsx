@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { 
   Users, 
@@ -78,9 +79,17 @@ const LawyerDashboard = () => {
                </div>
                Today's Schedule
              </h2>
-             <span className="text-xs font-bold px-2 py-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-               Feb 14, 2026
-             </span>
+             <div className="flex items-center gap-2">
+               <span className="text-xs font-bold px-2 py-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                 Feb 14, 2026
+               </span>
+               <Link
+                 to="/lawyer/schedule"
+                 className="px-3 py-1.5 text-xs font-bold rounded-md bg-orange-600 hover:bg-orange-500 text-white border border-orange-500/50"
+               >
+                 Open Full Schedule
+               </Link>
+             </div>
            </div>
 
            <div className="space-y-6 relative">
