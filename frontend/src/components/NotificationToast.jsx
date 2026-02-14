@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { CheckCircle, Info, AlertCircle, X, ExternalLink } from "lucide-react";
+import { Check, Info, AlertCircle, X, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const NotificationToast = ({ notification, onClose }) => {
@@ -32,17 +32,20 @@ const NotificationToast = ({ notification, onClose }) => {
 
   // Icon Mapping
   const icons = {
-    success: <CheckCircle className="w-5 h-5 text-green-500" />,
-    info: <Info className="w-5 h-5 text-blue-500" />,
-    error: <AlertCircle className="w-5 h-5 text-red-500" />
+    success: <Check className="w-6 h-6 text-green-500" />,
+    info: <Info className="w-6 h-6 text-blue-500" />,
+    error: <AlertCircle className="w-6 h-6 text-red-500" />
   };
 
   return (
     <div
       className={`
-        pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl 
+        pointer-events-auto 
+        w-80 md:w-96  /* <--- CHANGED THIS: Fixed width prevents squishing */
+        overflow-hidden rounded-2xl 
         bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 
-        shadow-xl ring-1 ring-black ring-opacity-5 transition-all duration-300 ease-out transform
+        shadow-2xl ring-1 ring-black ring-opacity-5 
+        transition-all duration-300 ease-out transform
         ${isVisible ? "translate-y-0 opacity-100 scale-100" : "translate-y-2 opacity-0 scale-95"}
       `}
     >
@@ -51,15 +54,15 @@ const NotificationToast = ({ notification, onClose }) => {
           <div className="flex-shrink-0 pt-0.5">
             {icons[notification.type] || icons.info}
           </div>
-          <div className="ml-3 w-0 flex-1 pt-0.5" onClick={handleClick}>
+          <div className="ml-3 w-0 flex-1 pt-0.5 cursor-pointer" onClick={handleClick}>
             <p className="text-sm font-bold text-slate-900 dark:text-white">
               {notification.title}
             </p>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 break-words leading-relaxed">
               {notification.message}
             </p>
             {notification.link && (
-                <p className="mt-2 text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1 cursor-pointer hover:underline">
+                <p className="mt-2 text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline">
                     View Details <ExternalLink className="w-3 h-3" />
                 </p>
             )}

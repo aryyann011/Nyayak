@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import {
-  Briefcase, Clock, FileText, CheckCircle, XCircle,
-  User, MapPin, Loader2, Scale
+import { 
+  Briefcase, Clock, FileText, CheckCircle, XCircle, 
+  User, MapPin, Loader2, Scale 
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/Authcontext";
@@ -20,16 +20,12 @@ const LawyerCaseRequests = () => {
   const fetchRequests = async () => {
     if (!user) return;
     setLoading(true);
-
+    
     const { data, error } = await supabase
       .from('cases')
       .select(`
         *,
-        profiles (
-          full_name,
-          email,
-          phone
-        )
+        profiles ( full_name, email, phone )
       `)
       .eq('status', 'Pending Acceptance')
       .eq('lawyer_id', user.id)
@@ -45,29 +41,32 @@ const LawyerCaseRequests = () => {
 
   useEffect(() => {
     fetchRequests();
-
     const channel = supabase
       .channel('lawyer_requests_channel')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cases', filter: `lawyer_id=eq.${user?.id}` }, () => fetchRequests())
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   // --- LOGIC: HANDLERS ---
-  const handleAccept = async (caseItem) => { // Accept the whole item to get user_id
-    const { error } = await supabase.from('cases').update({ status: 'Payment Pending' }).eq('id', caseItem.id);
+  const handleAccept = async (caseItem) => { 
+    // 1. Update DB Status
+    const { error } = await supabase
+        .from('cases')
+        .update({ status: 'Payment Pending' })
+        .eq('id', caseItem.id);
     
     if (!error) {
-        toast.success("Case Accepted");
-        fetchRequests();
+        // 2. Feedback for Lawyer (You)
+        toast.success("Case Accepted successfully!");
+        fetchRequests(); 
         
-        // Notify the Citizen
+        // 3. Notification for Citizen (Them)
         if (caseItem.user_id) {
             await sendNotification(
-                caseItem.user_id, // Get ID from the case object
+                caseItem.user_id, 
                 "Representation Accepted",
-                "Your lawyer has reviewed and accepted your case.",
+                "Your lawyer has accepted the case. Please proceed to payment.",
                 "success",
                 `/cases/${caseItem.id}`
             );
@@ -82,7 +81,7 @@ const LawyerCaseRequests = () => {
     if (!window.confirm("Reject request?")) return;
     const { error } = await supabase.from('cases').update({ status: 'Rejected', lawyer_id: null }).eq('id', caseId);
     if (!error) {
-        toast.info("Request Rejected");
+        toast.info("Request Declined");
         fetchRequests();
     } else {
         toast.error("Error declining request");
@@ -90,7 +89,7 @@ const LawyerCaseRequests = () => {
   };
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen font-sans">
+    <div className="p-8 bg-slate-50 min-h-screen font-sans">
 
       {/* Header */}
       <div className="flex justify-between items-center mb-8 max-w-6xl mx-auto">
@@ -177,19 +176,19 @@ const LawyerCaseRequests = () => {
 
                    {/* Action Buttons */}
                    <div className="flex gap-3 w-full md:w-auto">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleReject(item.id); }} // Stop prop to avoid navigating
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleReject(item.id); }} 
                         className="px-6 py-2.5 border border-gray-200 text-gray-500 font-bold rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all flex items-center justify-center gap-2"
                       >
                          Decline
                       </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleAccept(item); }} // Pass item, stop prop
-                        className="bg-gray-900 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-[#ff4d00] transition-all shadow-sm flex items-center justify-center gap-2"
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleAccept(item); }} 
+                        className="bg-slate-900 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-[#ff4d00] transition-all shadow-sm flex items-center justify-center gap-2"
                       >
                          Accept Case
                       </button>
-                      <button
+                      <button 
                         onClick={() => navigate(`/lawyer/case/${item.id}`)}
                         className="px-4 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all text-xs uppercase tracking-wider"
                       >

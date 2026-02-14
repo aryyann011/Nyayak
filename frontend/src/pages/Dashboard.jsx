@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
-import DashboardLayout from "../layouts/DashboardLayout";
 import { useAuth } from "../context/Authcontext";
-import { getProfile } from "../lib/profileService"; 
+import { getProfile } from "../lib/profileService";
 
-// Import the sub-dashboards (We will build these next)
+// Import the sub-dashboards
 import CitizenDashboard from "./citizen/CitizenDashboard";
 import LawyerDashboard from "./lawyer/LawyerDashboard";
-// import PoliceDashboard from "./dashboards/PoliceDashboard"; // Placeholder
-// import LawyerDashboard from "./dashboards/LawyerDashboard"; // Placeholder
+// import PoliceDashboard from "./police/PoliceDashboard"; // Uncomment when ready
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -32,14 +30,22 @@ const Dashboard = () => {
     fetchRole();
   }, [user]);
 
-  if (loading) return <div className="p-10 text-center">Loading Dashboard...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+            <div className="w-8 h-8 border-4 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-500 font-bold text-sm tracking-widest uppercase">Loading Workspace...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    // <DashboardLayout>
     <>
       {role === 'citizen' && <CitizenDashboard user={user} />}
-      {role === 'police' && <div className="p-10">Police Dashboard Coming Soon</div>}
-      {role === 'lawyer' && <LawyerDashboard/>}
+      {role === 'lawyer' && <LawyerDashboard />}
+      {role === 'police' && <div className="p-10 text-center font-bold text-slate-500">Police Dashboard Coming Soon</div>}
     </>
   );
 };

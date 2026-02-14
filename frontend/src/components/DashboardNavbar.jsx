@@ -1,13 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import { Bell, Search, Sun, Moon, Menu, Calendar, Briefcase, Radio, Siren } from "lucide-react"; 
 import { useTheme } from "../context/themeContext";
 import { useAuth } from "../context/Authcontext";
+import { useNotification } from "../context/NotificationContext"; // Import Context
+import NotificationCenter from "./NotificationCenter"; // Import New Component
 
 const DashboardNavbar = ({ toggleSidebar, onEmergencyClick }) => { 
   const { isDark, toggleTheme } = useTheme();
   const { user } = useAuth();
   
+  // Connect to Context
+  const { allNotifications } = useNotification();
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  
   const role = user?.user_metadata?.role || 'citizen';
+  
+  // Count unread items
+  const unreadCount = allNotifications.filter(n => !n.is_read).length;
 
   const getPlaceholder = () => {
     if (role === 'lawyer') return "Search case files, clients...";
@@ -16,10 +25,10 @@ const DashboardNavbar = ({ toggleSidebar, onEmergencyClick }) => {
   };
 
   return (
-    // CHANGE: Removed 'sticky top-0 z-40'. Added 'shrink-0' to prevent crushing.
     <header className="h-16 px-8 flex items-center justify-between border-b transition-colors duration-300 shrink-0
       bg-white border-slate-200
       dark:bg-[#111827] dark:border-slate-800
+      relative
     ">
       
       {/* Left: Search or Menu */}
@@ -57,15 +66,32 @@ const DashboardNavbar = ({ toggleSidebar, onEmergencyClick }) => {
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
         </button>
 
-        <button className="relative p-2.5 rounded-xl transition-colors
-          text-slate-500 hover:bg-slate-100
-          dark:text-slate-400 dark:hover:bg-slate-800
-        ">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2.5 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
-        </button>
+        {/* NOTIFICATION BELL */}
+        <div className="relative">
+          <button 
+            onClick={() => setIsNotifOpen(!isNotifOpen)}
+            className={`relative p-2.5 rounded-xl transition-all
+              ${isNotifOpen 
+                ? 'bg-orange-50 text-orange-600 dark:bg-orange-900/20' 
+                : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'}
+            `}
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 text-white text-[9px] font-black flex items-center justify-center rounded-full border-2 border-white dark:border-[#111827] animate-in zoom-in">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* DROPDOWN COMPONENT */}
+          <NotificationCenter 
+            isOpen={isNotifOpen} 
+            onClose={() => setIsNotifOpen(false)} 
+          />
+        </div>
         
-        {/* DYNAMIC BUTTONS */}
+        {/* DYNAMIC ROLE BUTTONS */}
         {role === 'lawyer' ? (
           <div className="hidden sm:flex items-center gap-3">
              <button className="flex items-center gap-2 px-4 py-2.5 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 text-sm font-bold rounded-xl hover:bg-orange-100 transition-all">
@@ -89,10 +115,9 @@ const DashboardNavbar = ({ toggleSidebar, onEmergencyClick }) => {
              </button>
           </div>
         ) : (
-          /* CITIZEN: EMERGENCY BUTTON */
           <button 
             onClick={onEmergencyClick}
-            className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700"
+            className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700 transition-all shadow-lg shadow-red-900/20"
           >
             <Siren className="w-4 h-4" />
             <span>SOS / Emergency</span>

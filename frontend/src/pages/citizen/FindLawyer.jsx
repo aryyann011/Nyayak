@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Search, Star, MapPin, Briefcase, 
-  ShieldCheck, ChevronRight, Loader2, Scale, User, Building2
+  ShieldCheck, ChevronRight, Loader2, Scale, User, Building2 
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
-import { useNotification } from "../../context/NotificationContext"; // <--- Import Context
+import { useNotification } from "../../context/NotificationContext";
+import { toast } from "react-toastify"; // Added for visual feedback
 
 const FindLawyer = () => {
   const locationState = useLocation().state;
-  const { sendNotification } = useNotification(); // <--- Init Hook
+  const { sendNotification } = useNotification();
   const navigate = useNavigate();
   const caseId = locationState?.caseId; 
 
@@ -47,7 +48,7 @@ const FindLawyer = () => {
   // --- HIRE LOGIC ---
   const handleHireRequest = async (lawyerId) => {
     if (!caseId) {
-      alert("No active case file found. Please file a case first.");
+      toast.warn("No active case found. Please file a complaint first.");
       navigate('/file-complaint');
       return;
     }
@@ -55,7 +56,7 @@ const FindLawyer = () => {
     setRequestingId(lawyerId);
 
     try {
-      // 1. Assign Lawyer ID & Update Status
+      // 1. Assign Lawyer ID & Update Status in DB
       const { error } = await supabase
         .from('cases')
         .update({ 
@@ -66,7 +67,7 @@ const FindLawyer = () => {
 
       if (error) throw error;
 
-      // 2. Notify the Lawyer
+      // 2. Notify the Lawyer (Realtime Popup)
       await sendNotification(
          lawyerId, 
          "New Case Request", 
@@ -75,11 +76,13 @@ const FindLawyer = () => {
          "/lawyer/requests"
       );
 
-      alert("Request Sent! The lawyer has been notified.");
-      navigate('/my-cases');
+      // 3. Feedback for You (Toast)
+      toast.success("Request Sent! The lawyer has been notified.");
+      navigate('/cases'); // Redirect to My Cases
+
     } catch (err) {
       console.error("Hire Error:", err);
-      alert("Failed to send request. Please check your connection.");
+      toast.error("Failed to send request. Please check your connection.");
     } finally {
       setRequestingId(null);
     }

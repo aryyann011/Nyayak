@@ -47,8 +47,8 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <NotificationProvider>
         <BrowserRouter>
+        <NotificationProvider>
           <Routes>
 
             {/* ================= PUBLIC ROUTES ================= */}
@@ -141,8 +141,8 @@ function App() {
             </Route>
 
           </Routes>
+          </NotificationProvider>
         </BrowserRouter>
-        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   );
