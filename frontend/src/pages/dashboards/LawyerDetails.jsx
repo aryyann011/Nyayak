@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { 
   ShieldCheck, MapPin, Briefcase, Star, Award, 
-  ChevronLeft, Building2, Gavel, Mail, Phone, ExternalLink 
+  ChevronLeft, Building2, Mail, Phone, ExternalLink, Loader2, User 
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
@@ -37,11 +37,15 @@ const LawyerProfile = () => {
 
         <div className="bg-white border border-slate-200 shadow-sm overflow-hidden">
           
-          {/* Professional Header Section */}
           <div className="flex flex-col md:flex-row border-b border-slate-200">
+             {/* --- SIDEBAR PROFILE --- */}
              <div className="w-full md:w-80 bg-slate-50 p-10 flex flex-col items-center border-b md:border-b-0 md:border-r border-slate-200">
-                <div className="w-40 h-40 rounded-full border-4 border-white shadow-md overflow-hidden bg-white mb-6">
-                  <img src={lawyer.avatar_url} alt={lawyer.name} className="w-full h-full object-cover grayscale" />
+                <div className="w-40 h-40 rounded-full border-4 border-white shadow-md overflow-hidden bg-slate-200 flex items-center justify-center mb-6">
+                  {lawyer.avatar_url ? (
+                    <img src={lawyer.avatar_url} alt={lawyer.name} className="w-full h-full object-cover grayscale" />
+                  ) : (
+                    <User className="w-20 h-20 text-slate-400" />
+                  )}
                 </div>
                 <div className="text-center">
                   <h1 className="text-2xl font-bold font-serif-heading text-slate-900">{lawyer.name}</h1>
@@ -49,7 +53,7 @@ const LawyerProfile = () => {
                 </div>
                 <div className="mt-8 w-full space-y-4 pt-8 border-t border-slate-200">
                    <div className="flex items-center justify-between text-xs font-bold uppercase text-slate-400 tracking-tighter">
-                      <span>Verification ID</span>
+                      <span>ID</span>
                       <span className="text-slate-900">BCI-29310</span>
                    </div>
                    <div className="flex items-center justify-between text-xs font-bold uppercase text-slate-400 tracking-tighter">
@@ -59,6 +63,7 @@ const LawyerProfile = () => {
                 </div>
              </div>
 
+             {/* --- MAIN CONTENT --- */}
              <div className="flex-1 p-8 md:p-12 bg-white">
                 <div className="flex justify-between items-start mb-10">
                    <div className="space-y-1">
@@ -96,21 +101,10 @@ const LawyerProfile = () => {
                       <h2 className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Professional Summary</h2>
                       <p className="text-sm text-slate-600 leading-relaxed font-medium italic">"{lawyer.bio}"</p>
                    </div>
-                   <div className="space-y-4 pt-6">
-                      <h2 className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">Experience Highlights</h2>
-                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         {['Complex Litigation', 'Strategic Mediation', 'Corporate Compliance', 'High-Stakes Negotiations'].map(item => (
-                            <li key={item} className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                               <Award className="w-4 h-4 text-blue-600" /> {item}
-                            </li>
-                         ))}
-                      </ul>
-                   </div>
                 </div>
              </div>
           </div>
 
-          {/* Institutional Footer Action Bar */}
           <div className="p-8 bg-slate-900 flex flex-col md:flex-row items-center justify-between gap-6">
              <div className="flex gap-8">
                 <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest"><Phone className="w-4 h-4" /> Connect Office</div>
@@ -120,7 +114,7 @@ const LawyerProfile = () => {
                 onClick={() => navigate('/find-lawyer', { state: locationState })}
                 className="w-full md:w-auto bg-white text-slate-900 px-10 py-4 font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-3 shadow-xl"
              >
-                Request Consultation <ExternalLink className="w-4 h-4" />
+                Return to Directory <ExternalLink className="w-4 h-4" />
              </button>
           </div>
 

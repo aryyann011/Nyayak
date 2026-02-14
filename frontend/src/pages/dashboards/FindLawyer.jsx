@@ -2,44 +2,60 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Search, Star, MapPin, Briefcase, 
-  ShieldCheck, ChevronRight, Loader2, Scale, Building2, Gavel
+  ShieldCheck, ChevronRight, Loader2, Scale, User, Building2
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 
 const FindLawyer = () => {
   const locationState = useLocation().state;
   const navigate = useNavigate();
-  const caseId = locationState?.caseId; // Passed from the filing page
+  const caseId = locationState?.caseId; 
 
   const [lawyers, setLawyers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState(locationState?.category || "All");
+  const [requestingId, setRequestingId] = useState(null);
 
   const CATEGORIES = ["All", "Criminal Defense", "Civil Rights", "Family Law", "Corporate"];
 
   useEffect(() => {
     const fetchLawyers = async () => {
       setLoading(true);
+      
+      // Fetch verified lawyers
       let query = supabase.from('lawyers').select('*').eq('is_available', true);
-      if (selectedFilter !== "All") query = query.eq('specialization', selectedFilter);
+      
+      if (selectedFilter !== "All") {
+        query = query.eq('specialization', selectedFilter);
+      }
+
       const { data, error } = await query;
-      if (error) console.error("Error:", error);
-      else setLawyers(data);
+      if (error) {
+        console.error("Error fetching lawyers:", error);
+      } else {
+        const sortedData = data?.sort((a, b) => 
+          a.name.includes("(Demo)") ? -1 : 1
+        ) || [];
+        setLawyers(sortedData);
+      }
       setLoading(false);
     };
     fetchLawyers();
   }, [selectedFilter]);
 
-  // Handle the Hire Request Flow
+  // --- HIRE LOGIC ---
   const handleHireRequest = async (lawyerId) => {
     if (!caseId) {
-      alert("Please file your case details first before requesting a lawyer.");
+      alert("No active case file found. Please file a case first.");
       navigate('/file-complaint');
       return;
     }
 
+    setRequestingId(lawyerId);
+
     try {
+      // Logic: Assign Lawyer ID AND update Status
       const { error } = await supabase
         .from('cases')
         .update({ 
@@ -50,11 +66,14 @@ const FindLawyer = () => {
 
       if (error) throw error;
 
-      alert("Your request has been sent. You will be notified once the lawyer reviews and accepts your case.");
+      alert("Request Sent! The lawyer has been notified.");
       navigate('/my-cases');
     } catch (err) {
       console.error("Hire Error:", err);
-      alert("Failed to send request. Please try again.");
+      // If this alerts, the SQL Policy in Step 1 was not run correctly
+      alert("Failed to send request. Database permission denied.");
+    } finally {
+      setRequestingId(null);
     }
   };
 
@@ -64,6 +83,7 @@ const FindLawyer = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Header */}
       <div className="bg-white border-b border-slate-200 pt-12 pb-12 px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="space-y-2">
@@ -88,6 +108,7 @@ const FindLawyer = () => {
         </div>
       </div>
 
+      {/* Filter Tabs */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-20 px-8">
         <div className="max-w-7xl mx-auto flex gap-8 overflow-x-auto no-scrollbar">
           {CATEGORIES.map(cat => (
@@ -103,6 +124,7 @@ const FindLawyer = () => {
         </div>
       </div>
 
+      {/* Results Grid */}
       <div className="max-w-7xl mx-auto px-8 py-10 w-full">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-3">
@@ -113,18 +135,21 @@ const FindLawyer = () => {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {filteredLawyers.map((lawyer) => (
               <div key={lawyer.id} className="bg-white border border-slate-200 hover:border-slate-400 transition-all duration-300 flex flex-col md:flex-row group">
+                
                 <div className="w-full md:w-52 bg-slate-50 p-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100">
                   <div className="relative">
-                    <div className="w-28 h-28 rounded-full bg-white border border-slate-200 flex items-center justify-center overflow-hidden shadow-sm ring-4 ring-white">
+                    <div className="w-24 h-24 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center overflow-hidden shadow-sm">
                       {lawyer.avatar_url ? (
                         <img src={lawyer.avatar_url} alt={lawyer.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                       ) : (
-                        <span className="text-3xl font-serif-heading text-slate-300 group-hover:text-slate-900">{lawyer.name.charAt(0)}</span>
+                        <User className="w-12 h-12 text-slate-400" />
                       )}
                     </div>
-                    <div className="absolute bottom-1 right-1 p-1.5 bg-slate-900 text-white rounded-full border-2 border-white"><ShieldCheck className="w-4 h-4" /></div>
+                    <div className="absolute bottom-0 right-0 p-1 bg-slate-900 text-white rounded-full border-2 border-white shadow-sm"><ShieldCheck className="w-3 h-3" /></div>
                   </div>
-                  <div className="mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Verified</div>
+                  <div className="mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                     {lawyer.name.includes("(Demo)") ? "Demo Profile" : "Verified"}
+                  </div>
                 </div>
 
                 <div className="flex-1 flex flex-col">
@@ -139,7 +164,7 @@ const FindLawyer = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                         <div className="text-[10px] font-bold text-slate-400 uppercase">Rate</div>
+                         <div className="text-[10px] font-bold text-slate-400 uppercase">Hourly Rate</div>
                          <div className="text-lg font-bold text-slate-900 leading-none mt-1">{lawyer.hourly_rate}<span className="text-xs text-slate-400 font-normal">/hr</span></div>
                       </div>
                     </div>
@@ -154,15 +179,16 @@ const FindLawyer = () => {
                   <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
                     <button 
                       onClick={() => navigate(`/lawyer-profile/${lawyer.id}`, { state: locationState })}
-                      className="text-[11px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900"
+                      className="text-[11px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors"
                     >
                       View Profile
                     </button>
                     <button 
                       onClick={() => handleHireRequest(lawyer.id)}
-                      className="bg-slate-900 text-white px-6 py-2 text-[11px] font-bold uppercase tracking-widest hover:bg-black transition-all shadow-sm"
+                      disabled={requestingId === lawyer.id}
+                      className="bg-slate-900 text-white px-6 py-2 text-[11px] font-bold uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                      Request to Hire <ChevronRight className="w-3 h-3" />
+                      {requestingId === lawyer.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <>Request to Hire <ChevronRight className="w-3 h-3" /></>}
                     </button>
                   </div>
                 </div>

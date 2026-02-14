@@ -13,7 +13,6 @@ import PoliceLayout from "./layouts/PoliceLayout";
 import IncidentReports from "./pages/police/IncidentReports";
 
 import LawyerDashboard from "./pages/lawyer/LawyerDashboard";
-import CaseManagement from "./pages/lawyer/CaseManagement";
 import CaseDetails from "./pages/dashboards/CaseDetails";
 
 /* ================= LAYOUTS ================= */
@@ -29,12 +28,15 @@ import LawyerProfile from "./pages/dashboards/LawyerDetails";
 /* ================= ROUTE PROTECTION ================= */
 import ProtectedRoute from "./components/ProtectedRoute";
 import PoliceDashboard from "./pages/police/PoliceDashboard";
-import ComplaintPage from "./pages/ComplaintPage";
+import ComplaintPage from "./pages/dashboards/ComplaintPage";
 import EmergencyLogs from "./pages/EmergencyLogs";
 import FindLawyer from "./pages/dashboards/FindLawyer";
 
 /* ================= PAYMENT ================= */
 import PaymentPage from "./pages/PaymentPage";
+import LawyerCaseRequests from "./pages/lawyer/CaseRequest";
+import LawyerDocket from "./pages/lawyer/CaseManagement";
+import CaseDrafts from "./pages/dashboards/CaseDrafts";
 import PaymentSuccess from "./pages/PaymentSuccess";
 function App() {
   return (
@@ -77,10 +79,10 @@ function App() {
                 path="/lawyer/legal-dashboard"
                 element={<LawyerDashboard />}
               />
-
+              <Route path="/lawyer/requests" element={<LawyerCaseRequests/>} />
               <Route
                 path="/lawyer/cases"
-                element={<CaseManagement />}
+                element={<LawyerDocket />}
               />
             </Route>
 
@@ -102,6 +104,8 @@ function App() {
               <Route path="/find-lawyer" element={<FindLawyer/>} />
               <Route path="/payment" element={<PaymentPage />} />
               <Route path="/cases" element={<CaseDetails />} />
+              <Route path="/case-drafts" element={<CaseDrafts/>} />
+              {/* <Route path="/" */}
             </Route>
 
             {/* ================= PROFILE ROUTES ================= */}
