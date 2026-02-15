@@ -9,7 +9,7 @@ import { useAuth } from '../context/Authcontext';
 import { useNavigate } from "react-router-dom";
 
 
-const scalesBgUrl = "/scale.png";
+const scalesBgUrl = "/scales.png";
 
 const LandingPage = () => {
   const { isDark } = useTheme();

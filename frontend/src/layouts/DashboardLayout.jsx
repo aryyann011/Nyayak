@@ -4,7 +4,7 @@ import DashboardNavbar from "../components/DashboardNavbar";
 import EmergencyModal from "../components/EmergencyModal";
 
 const DashboardLayout = ({ children }) => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
 
   return (
