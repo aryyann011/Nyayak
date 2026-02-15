@@ -24,11 +24,15 @@ const LawyerDocket = () => {
 
   // --- FETCH DOCKET ---
   const fetchDocket = async () => {
+    if (!user) return;
     setLoading(true);
     let query = supabase
       .from('cases')
       .select('*, users:user_id(full_name, email)')
       .order('created_at', { ascending: false });
+
+    // Show only cases assigned to the logged-in lawyer
+    query = query.eq('lawyer_id', user.id);
 
     if (activeTab === "Payment Pending") {
        query = query.eq('status', 'Payment Pending');
@@ -67,7 +71,7 @@ const LawyerDocket = () => {
 
   useEffect(() => {
     fetchDocket();
-  }, [activeTab]);
+  }, [activeTab, user]);
 
   // --- HANDLERS ---
   const handleOpenSchedule = (caseItem) => {
