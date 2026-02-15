@@ -85,7 +85,7 @@ export default function Schedule() {
         toast.success("Event Added");
         setShowAdd(false);
         fetchEvents();
-    } catch(e) { toast.error("Error creating event"); }
+    } catch(err) { console.error(err); toast.error("Error creating event"); }
   };
 
   // --- HELPER COMPONENTS FOR VIEWS ---
@@ -106,25 +106,25 @@ export default function Schedule() {
     return (
       <div className="space-y-4">
         {displayEvents.map((e) => (
-          <div key={e.id} className="relative p-5 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+          <div key={e.id} className="relative p-5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
              <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl ${e.risk_level === 'Critical' ? 'bg-red-500' : 'bg-blue-500'}`} />
              <div className="flex justify-between items-start pl-2">
                 <div>
                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-slate-50 text-slate-700">{e.type}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200">{e.type}</span>
                       
                       {/* --- DATE ADDED HERE --- */}
-                      <span className="text-xs text-slate-500 font-bold flex items-center gap-1">
+                      <span className="text-xs text-slate-500 dark:text-slate-300 font-bold flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {formatDate(e.start)} • {formatTime(e.start)}
                       </span>
                    </div>
-                   <h3 className="text-lg font-bold text-slate-900">{e.title}</h3>
-                   <div className="flex items-center gap-4 text-sm text-slate-500 mt-2 font-medium">
+                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">{e.title}</h3>
+                   <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-300 mt-2 font-medium">
                       <span className="flex items-center gap-1"><MapPin className="w-4 h-4"/> {e.location}</span>
                    </div>
                 </div>
-                <button className="px-3 py-1.5 text-xs font-bold bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-600">Details</button>
+                <button className="px-3 py-1.5 text-xs font-bold bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-200">Details</button>
              </div>
           </div>
         ))}
@@ -138,16 +138,16 @@ export default function Schedule() {
     return (
       <div className="grid grid-cols-7 gap-2 h-[500px] overflow-x-auto min-w-[800px]">
         {days.map((day, i) => (
-          <div key={day} className="flex flex-col bg-white rounded-lg border border-slate-200 h-full">
-            <div className="p-2 border-b border-slate-100 text-center font-bold text-slate-700 bg-slate-50 rounded-t-lg">
+          <div key={day} className="flex flex-col bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 h-full">
+            <div className="p-2 border-b border-slate-100 dark:border-slate-700 text-center font-bold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-700 rounded-t-lg">
               {day}
             </div>
             <div className="p-2 flex-1 space-y-2 overflow-y-auto">
                {events.filter(e => e.start.getDay() === (i + 1)).map(e => (
-                 <div key={e.id} className="p-2 bg-blue-50 border border-blue-100 rounded text-xs group hover:bg-blue-100 transition-colors">
-                    <div className="font-bold text-blue-900 truncate">{e.title}</div>
-                    <div className="text-[10px] text-blue-500 mt-1">{formatDate(e.start)}</div>
-                    <div className="text-[10px] text-slate-500">{formatTime(e.start)}</div>
+                 <div key={e.id} className="p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded text-xs group hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                    <div className="font-bold text-blue-900 dark:text-blue-300 truncate">{e.title}</div>
+                    <div className="text-[10px] text-blue-500 dark:text-blue-300 mt-1">{formatDate(e.start)}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-300">{formatTime(e.start)}</div>
                  </div>
                ))}
             </div>
@@ -162,17 +162,17 @@ export default function Schedule() {
     const daysInMonth = Array.from({length: 30}, (_, i) => i + 1);
     
     return (
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <div className="grid grid-cols-7 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+        <div className="grid grid-cols-7 gap-px bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-            <div key={d} className="bg-slate-50 p-2 text-center text-xs font-bold text-slate-500 uppercase">{d}</div>
+            <div key={d} className="bg-slate-50 dark:bg-slate-700 p-2 text-center text-xs font-bold text-slate-500 dark:text-slate-300 uppercase">{d}</div>
           ))}
           {daysInMonth.map(day => (
-            <div key={day} className="bg-white min-h-[100px] p-2 hover:bg-slate-50 transition-colors cursor-pointer relative">
-              <div className="text-right text-xs font-bold text-slate-400 mb-1">{day}</div>
+            <div key={day} className="bg-white dark:bg-slate-800 min-h-[100px] p-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer relative">
+              <div className="text-right text-xs font-bold text-slate-400 dark:text-slate-300 mb-1">{day}</div>
               <div className="space-y-1">
                  {events.filter(e => e.start.getDate() === day).slice(0, 3).map(e => (
-                   <div key={e.id} className={`text-[10px] px-1 py-0.5 rounded truncate ${e.type === 'Court' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+                   <div key={e.id} className={`text-[10px] px-1 py-0.5 rounded truncate ${e.type === 'Court' ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'}`}>
                      {formatTime(e.start)} {e.title}
                    </div>
                  ))}
@@ -186,10 +186,10 @@ export default function Schedule() {
 
   // --- RENDER ---
   return (
-    <div className="space-y-6 p-8 min-h-screen bg-slate-50">
+    <div className="space-y-6 p-8 min-h-screen bg-slate-50 dark:bg-[#0B1120] dark:text-slate-100 transition-colors">
       
       {/* Header Card */}
-      <div className="rounded-xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white p-6 shadow-sm">
+      <div className="rounded-xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white dark:bg-slate-800 dark:border-slate-700 p-6 shadow-sm">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-white text-orange-700 border border-orange-200 shadow-sm">
@@ -201,12 +201,12 @@ export default function Schedule() {
             </div>
           </div>
           
-          <div className="flex bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
+          <div className="flex bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-1 shadow-sm">
             {['day', 'week', 'month'].map((v) => (
               <button
                 key={v}
                 className={`px-4 py-2 text-sm font-bold capitalize rounded-md transition-all ${
-                  view === v ? "bg-slate-900 text-white shadow" : "text-slate-600 hover:bg-slate-50"
+                  view === v ? "bg-slate-900 text-white shadow" : "text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700"
                 }`}
                 onClick={() => setView(v)}
               >
@@ -217,7 +217,7 @@ export default function Schedule() {
         </div>
         
         {upcoming && (
-           <div className="mt-6 flex items-center gap-3 p-3 bg-white/80 border border-orange-200/50 rounded-lg backdrop-blur-sm">
+           <div className="mt-6 flex items-center gap-3 p-3 bg-white/80 dark:bg-slate-800/80 border border-orange-200/50 dark:border-slate-700 rounded-lg backdrop-blur-sm">
               <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse"></div>
               <span className="text-sm font-bold text-slate-700">Next Up:</span>
               <span className="text-sm font-bold text-slate-900">{upcoming.title}</span>
@@ -246,28 +246,28 @@ export default function Schedule() {
 
         {/* RIGHT COLUMN: Stats & Tools */}
         <div className="space-y-6">
-           <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm">
+           <div className="p-5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                  <div className="flex items-center gap-2 font-bold text-slate-900">
                     <Gauge className="w-5 h-5 text-orange-600"/> Daily Workload
                  </div>
-                 <span className="text-xs font-bold bg-slate-100 px-2 py-1 rounded">{Math.round(workload.mins/60)}h Scheduled</span>
+                 <span className="text-xs font-bold bg-slate-100 dark:bg-slate-700 dark:text-slate-200 px-2 py-1 rounded">{Math.round(workload.mins/60)}h Scheduled</span>
               </div>
-              <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-3">
+              <div className="h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-3">
                  <div className="h-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-1000" style={{width: `${workload.score}%`}}></div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
-                 <div className="p-2 bg-slate-50 rounded-lg">
-                    <div className="text-lg font-bold text-slate-900">{workload.court}</div>
-                    <div className="text-[10px] uppercase font-bold text-slate-400">Hearings</div>
+                 <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                    <div className="text-lg font-bold text-slate-900 dark:text-white">{workload.court}</div>
+                    <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-300">Hearings</div>
                  </div>
-                 <div className="p-2 bg-slate-50 rounded-lg">
-                    <div className="text-lg font-bold text-slate-900">{workload.meetings}</div>
-                    <div className="text-[10px] uppercase font-bold text-slate-400">Meetings</div>
+                 <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                    <div className="text-lg font-bold text-slate-900 dark:text-white">{workload.meetings}</div>
+                    <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-300">Meetings</div>
                  </div>
-                 <div className="p-2 bg-slate-50 rounded-lg">
-                    <div className="text-lg font-bold text-slate-900">{workload.deadlines}</div>
-                    <div className="text-[10px] uppercase font-bold text-slate-400">Deadlines</div>
+                 <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                    <div className="text-lg font-bold text-slate-900 dark:text-white">{workload.deadlines}</div>
+                    <div className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-300">Deadlines</div>
                  </div>
               </div>
            </div>

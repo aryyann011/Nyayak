@@ -160,6 +160,31 @@ const LawyerDashboard = () => {
              </button>
         </div>
 
+        {/* Right: Drafting Tool */}
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 shadow-sm flex flex-col justify-between">
+           <div>
+             <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg text-orange-600 dark:text-orange-400">
+                    <Gavel className="w-6 h-6" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Drafting Tool</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">AI legal drafting assistant</p>
+                </div>
+             </div>
+             <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+               Generate petitions, affidavits, notices and contracts. Coming soon.
+             </p>
+           </div>
+           
+           <button 
+             onClick={() => navigate("/lawyer/tools")}
+             className="w-full py-3 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-black transition-all flex items-center justify-center gap-2 group shadow-lg">
+                Open Drafting Tool
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+             </button>
+        </div>
+
       </div>
     </div>
   );
