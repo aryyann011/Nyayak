@@ -9,36 +9,36 @@
 # ==========================================
 # WEB FRAMEWORK
 # ==========================================
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-python-multipart>=0.0.22
-pydantic>=2.5.0
+fastapi>=0.115.0,<0.116
+uvicorn[standard]>=0.32.0,<0.33
+python-multipart>=0.0.22,<0.0.25
+pydantic>=2.5.0,<3.0
 
 # ==========================================
 # LANGUAGE MODEL & NLP
 # ==========================================
 # TinyLlama model for text generation
-transformers>=4.40.0
-torch>=2.2.0
+transformers>=4.40.0,<4.46
+torch>=2.2.0,<2.4
 # Embedding model for semantic search
-sentence-transformers>=2.7.0
+sentence-transformers>=2.7.0,<3.0
 
 # ==========================================
 # RETRIEVAL AUGMENTED GENERATION (RAG)
 # ==========================================
 # LangChain core framework
-langchain>=1.2.0
-langchain-core>=1.2.0
+langchain==1.2.10
+langchain-core==1.2.13
 # LangChain components
-langchain-community>=0.1.0
-langchain-huggingface>=0.0.1
+langchain-community==0.4.1
+langchain-huggingface==1.2.0
 # Vector database for similarity search
-faiss-cpu>=1.8.0
+faiss-cpu==1.8.0.post3
 
 # ==========================================
 # UTILITIES
 # ==========================================
-numpy>=1.24.0
+numpy>=1.24.0,<2.0
 
 # ==========================================
 # OPTIONAL: Development Dependencies
