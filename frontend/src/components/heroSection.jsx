@@ -45,7 +45,7 @@ const HeroSection = () => {
             Launch Platform
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
-          <Link to="/features" className={`w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border rounded-full font-bold text-lg transition-all hover:-translate-y-0.5 ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}>
+          <Link to="/login" className={`w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border rounded-full font-bold text-lg transition-all hover:-translate-y-0.5 ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}>
             View Services
           </Link>
         </motion.div>
