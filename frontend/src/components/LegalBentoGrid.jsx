@@ -3,6 +3,7 @@ import { FileText, Bell, Siren, Calendar, ArrowRight } from 'lucide-react';
 import { BentoGrid, BentoCard } from './ui/bento-Grid';
 import { Marquee } from './ui/Marquee';
 import { useTheme } from '../context/themeContext';
+import { Link } from 'react-router-dom';
 
 // --- VISUAL ASSETS (Optimized) ---
 
@@ -15,6 +16,7 @@ const files = [
 ];
 
 const DocumentMarquee = ({ isDark }) => (
+    
   <Marquee pauseOnHover className="absolute top-10 [--duration:30s] [mask-image:linear-gradient(to_top,transparent_10%,#000_100%)]">
     {files.map((f, idx) => (
       <div
@@ -150,7 +152,10 @@ export function LegalBentoGrid() {
              <BentoGrid>
                 {features.map((feature, idx) => (
                     // CRITICAL: We pass isDark prop here to FORCE the card theme
-                    <BentoCard key={idx} {...feature} isDark={isDark} />
+                   <Link key={idx} to="/login" className="contents">
+                        <BentoCard {...feature} isDark={isDark} />
+                    </Link>
+                    
                 ))}
              </BentoGrid>
         </div>

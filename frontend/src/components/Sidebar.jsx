@@ -70,7 +70,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, links = CITIZEN_LINKS, roleLabel 
 
           /* --- DESKTOP STYLES (Push) --- */
           md:relative md:translate-x-0 md:shadow-none
-          ${isCollapsed ? "md:w-20" : "md:w-64"}
+          ${isCollapsed ? "md:w-20" : "md:w-60"}
         `}
       >
         {/* Header / Logo */}

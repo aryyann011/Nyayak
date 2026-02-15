@@ -30,8 +30,8 @@ const PoliceSidebar = ({ isOpen, toggleSidebar }) => {
     { icon: LayoutDashboard, label: "Dispatch Map", path: "/police-dashboard" },
     { icon: FileText, label: "Incident Reports", path: "/police/reports" },
     { icon: User, label: "Profile", path: "/police/profile" },
-    { icon: Radio, label: "Unit Logs", path: "/police/logs" },
-    { icon: Settings, label: "Settings", path: "/police/settings" },
+    // { icon: Radio, label: "Unit Logs", path: "/police/logs" },
+    // { icon: Settings, label: "Settings", path: "/police/settings" },
   ];
 
   return (

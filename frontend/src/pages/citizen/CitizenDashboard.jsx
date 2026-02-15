@@ -12,7 +12,9 @@ import {
   Search,
   ArrowUpRight,
   Loader2,
-  Send
+  Send,
+  BookOpen, // Added Icon
+  Scale     // Added Icon
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import CitizenCrimeMap from "./CitizenCrimeMap";
@@ -135,24 +137,38 @@ const CitizenDashboard = ({ user }) => {
           </div>
         </div>
 
-        {/* SOS BUTTON (Compact & Professional) */}
-        <div className="lg:col-span-1 bg-white dark:bg-[#111827] border-l-4 border-red-500 rounded-2xl p-6 shadow-sm flex flex-col justify-between group cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
+        {/* --- NEW: LEGAL INSIGHT CARD (Replaced SOS) --- */}
+        <div className="lg:col-span-1 bg-white dark:bg-[#111827] rounded-[32px] p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+          {/* Decorative Corner */}
+          <div className="absolute top-0 right-0 w-24 h-24 bg-orange-50 dark:bg-orange-900/10 rounded-bl-full -mr-6 -mt-2 transition-transform group-hover:scale-110"></div>
+          
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-red-600">
-                <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-                Emergency
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg text-orange-600">
+                <BookOpen size={20} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                Daily Insight
               </span>
-              <ShieldAlert className="w-6 h-6 text-red-500" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-none">Trigger SOS</h3>
-            <p className="text-slate-500 text-xs mt-2">Instant authorities alert</p>
+            
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight mb-3">
+              Know Your Rights
+            </h3>
+            
+            <div className="relative pl-4 border-l-2 border-orange-300 dark:border-orange-700">
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic">
+                "Under Article 39A, free legal aid is a fundamental right for citizens who cannot afford justice due to economic disability."
+              </p>
+            </div>
           </div>
 
-          <button className="mt-4 w-full py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all">
-            <MapPin size={14} /> Share Location
+          <button className="mt-6 w-full py-3 bg-slate-50 dark:bg-slate-800 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-slate-700 dark:text-slate-200 hover:text-orange-700 dark:hover:text-orange-400 text-xs font-bold rounded-xl flex items-center justify-between px-4 transition-all border border-slate-100 dark:border-slate-700 group-hover:border-orange-200">
+            <span>View Constitutional Rights</span>
+            <ArrowUpRight size={16} />
           </button>
         </div>
+
       </div>
 
       {/* 2. MAIN DASHBOARD GRID */}
@@ -163,7 +179,7 @@ const CitizenDashboard = ({ user }) => {
           <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <Gavel className="w-5 h-5 text-orange-600" />
+                <Scale className="w-5 h-5 text-orange-600" />
                 <h3 className="font-bold text-lg text-slate-900 dark:text-white">Active Proceedings</h3>
               </div>
               <Link to="/cases" className="text-sm font-semibold text-blue-600 hover:text-blue-700">View All</Link>

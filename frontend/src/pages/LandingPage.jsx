@@ -2,11 +2,11 @@ import React from 'react';
 import { useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import HeroSection from '../components/heroSection';
-import LegalBentoGrid from '../components/LegalBentoGrid'; // Import the new grid
+import LegalBentoGrid from '../components/LegalBentoGrid';
 import Footer from '../components/Footer';
 import { useTheme } from '../context/themeContext';
 import { useAuth } from '../context/Authcontext';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";  // ✅ Added Link
 
 
 const scalesBgUrl = "/scales.png";
@@ -61,48 +61,54 @@ const LandingPage = () => {
         {/* 1. HERO SECTION */}
         <HeroSection />
 
-        {/* 2. TRUST STRIP (Keep this, it's good) */}
+        {/* 2. TRUST STRIP */}
         <div className={`py-12 border-y ${isDark ? 'bg-white/5 border-white/5' : 'bg-white/50 border-orange-100'}`}>
           <div className="max-w-7xl mx-auto px-6 text-center">
             <p className={`text-xs font-bold uppercase tracking-widest mb-10 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
               Trusted by Public Safety Departments
             </p>
-            {/* ... Trust Logos Code (Keep what you have) ... */}
+
             <div className="flex flex-wrap justify-center items-center gap-16 opacity-60">
   
-            <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center">
                 <img src="/delhi.png" alt="Delhi Police" className="h-16 mb-2" />
                 <span className="font-serif font-bold text-2xl">Delhi Police</span>
-            </div>
+              </div>
 
-            <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center">
                 <img src="/barcouncil.png" alt="Bar Council" className="h-16 mb-2" />
                 <span className="font-serif font-bold text-2xl">Bar Council</span>
-            </div>
+              </div>
 
-            <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center">
                 <img src="/niti.jpeg" alt="NITI Aayog" className="h-16 mb-2" />
                 <span className="font-serif font-bold text-2xl">NITI Aayog</span>
-            </div>
+              </div>
 
             </div>
-
           </div>
         </div>
 
-        {/* 3. NEW BENTO GRID (Replaces "System Modules" & "Problem/Solution") */}
+        {/* 3. BENTO GRID */}
         <LegalBentoGrid />
 
         {/* 4. CALL TO ACTION */}
         <section className="py-32 px-6 text-center">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-4xl md:text-6xl font-serif-heading font-bold mb-8">Ready to claim your rights?</h2>
+            <h2 className="text-4xl md:text-6xl font-serif-heading font-bold mb-8">
+              Ready to claim your rights?
+            </h2>
             <p className={`text-xl mb-12 max-w-2xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Join 10,000+ citizens using NyayaSahayak to navigate the legal system with confidence.
             </p>
-            <button className="px-12 py-6 bg-slate-900 hover:bg-black text-white rounded-full font-bold text-xl shadow-2xl hover:-translate-y-1 transition-all">
-              Get Started Now
-            </button>
+
+            {/* ✅ ONLY CHANGE MADE HERE */}
+            <Link to="/login">
+              <button className="px-12 py-6 bg-slate-900 hover:bg-black text-white rounded-full font-bold text-xl shadow-2xl hover:-translate-y-1 transition-all">
+                Get Started Now
+              </button>
+            </Link>
+
           </div>
         </section>
 
