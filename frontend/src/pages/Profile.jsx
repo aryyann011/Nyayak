@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import { useTheme } from "../context/themeContext";
 import { useAuth } from "../context/Authcontext";
 import { supabase } from "../lib/supabase";
-import Navbar from "../components/Navbar";
 import {
   User,
   Mail,
@@ -12,10 +11,12 @@ import {
   AlertCircle,
   Calendar,
   Home,
-  IdCard,
   Building2,
   FileText,
+  Camera,
+  Loader2,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 function VerifiedBadge({ verified }) {
   return (
@@ -37,8 +38,13 @@ export default function Profile() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  
+  // Stats
   const [firCount, setFirCount] = useState(0);
   const [draftCount, setDraftCount] = useState(0);
+  
   const scalesBgUrl = "/scale.png";
 
   const {
@@ -47,6 +53,7 @@ export default function Profile() {
     reset,
     formState: { isDirty },
     watch,
+    setValue,
   } = useForm({
     defaultValues: {
       full_name: "",
@@ -63,7 +70,7 @@ export default function Profile() {
   });
 
   const address = watch("address");
-  const displayName = watch("full_name") || user?.user_metadata?.full_name || (user?.email || "").split("@")[0];
+  const displayName = watch("full_name") || user?.email?.split("@")[0];
   const initials = (displayName || "")
     .split(" ")
     .map((p) => p[0])
@@ -71,6 +78,7 @@ export default function Profile() {
     .slice(0, 2)
     .toUpperCase();
 
+  // --- Dynamic Station Logic ---
   const computeHomeStation = useMemo(
     () => (addr) => {
       if (!addr) return "";
@@ -84,178 +92,168 @@ export default function Profile() {
   );
 
   useEffect(() => {
-    reset((prev) => ({ ...prev, home_station: computeHomeStation(address) }));
-  }, [address, computeHomeStation, reset]);
+    if (address) setValue("home_station", computeHomeStation(address));
+  }, [address, computeHomeStation, setValue]);
 
+  // --- 1. FETCH DATA ON LOAD ---
   useEffect(() => {
     let mounted = true;
     async function load() {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+      if (!user) return;
       try {
-        const { data: profileRows } = await supabase
+        setLoading(true);
+        
+        // Fetch Profile
+        const { data: profile } = await supabase
           .from("profiles")
           .select("*")
-          .eq("user_id", user.id)
-          .limit(1);
+          .eq("id", user.id)
+          .single();
 
-        const base = {
-          full_name: user.user_metadata?.full_name || "",
-          email: user.email || "",
-          phone: user.user_metadata?.phone || "",
-          aadhar_verified: profileRows?.[0]?.aadhar_verified || false,
-          dob: profileRows?.[0]?.dob || "",
-          gender: profileRows?.[0]?.gender || "",
-          address: profileRows?.[0]?.address || "",
-          home_station:
-            profileRows?.[0]?.home_station ||
-            computeHomeStation(profileRows?.[0]?.address || ""),
-          user_id: user.id,
-        };
-        if (mounted) reset(base);
-
-        const { data: firs } = await supabase
-          .from("firs")
-          .select("id")
-          .eq("user_id", user.id);
-        const { data: drafts } = await supabase
-          .from("documents")
-          .select("id")
-          .eq("user_id", user.id);
-
+        // Fetch Stats
+        const { count: fCount } = await supabase.from("cases").select("*", { count: 'exact', head: true }).eq("user_id", user.id);
+        
         if (mounted) {
-          setFirCount(Array.isArray(firs) ? firs.length : 0);
-          setDraftCount(Array.isArray(drafts) ? drafts.length : 0);
+          setFirCount(fCount || 0);
+          
+          if (profile) {
+            // Load Avatar
+            if (profile.avatar_url) {
+                const { data: imgData } = await supabase.storage.from('avatars').createSignedUrl(profile.avatar_url, 3600);
+                if (imgData) setAvatarUrl(imgData.signedUrl);
+            }
+
+            // Pre-fill Form
+            reset({
+              full_name: profile.full_name || "",
+              email: profile.email || user.email,
+              phone: profile.phone || "",
+              aadhar_verified: profile.aadhar_verified || false,
+              dob: profile.dob || "",
+              gender: profile.gender || "",
+              address: profile.address || "",
+              home_station: profile.home_station || computeHomeStation(profile.address || ""),
+              user_id: user.id,
+            });
+          }
         }
       } catch (err) {
-        console.error(err);
+        console.error("Profile load error:", err);
       } finally {
         if (mounted) setLoading(false);
       }
     }
     load();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [user, reset, computeHomeStation]);
 
+  // --- 2. HANDLE PHOTO UPLOAD ---
+  const handleImageUpload = async (e) => {
+    try {
+      setUploading(true);
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      const { error: updateError } = await supabase.from("profiles").update({ avatar_url: filePath }).eq("id", user.id);
+      if (updateError) throw updateError;
+
+      const { data: imgData } = await supabase.storage.from("avatars").createSignedUrl(filePath, 3600);
+      setAvatarUrl(imgData?.signedUrl);
+      toast.success("Profile photo updated!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // --- 3. SAVE DATA ---
   const onSubmit = async (values) => {
-    if (!user) return;
     setSaving(true);
     try {
-      await supabase.from("profiles").upsert(
-        {
-          user_id: user.id,
-          full_name: values.full_name,
-          phone: values.phone,
-          aadhar_verified: !!values.aadhar_verified,
-          dob: values.dob,
-          gender: values.gender,
-          address: values.address,
-          home_station: computeHomeStation(values.address),
-        },
-        { onConflict: "user_id" }
-      );
+      const updates = {
+        id: user.id,
+        full_name: values.full_name,
+        phone: values.phone,
+        // email is usually read-only for auth reasons, but we can save it to profile text column
+        aadhar_verified: values.aadhar_verified,
+        dob: values.dob,
+        gender: values.gender,
+        address: values.address,
+        home_station: values.home_station,
+        updated_at: new Date(),
+      };
 
-      if (values.email && values.email !== user.email) {
-        try {
-          await supabase.auth.updateUser({
-            email: values.email,
-            data: {
-              full_name: values.full_name,
-              phone: values.phone,
-            },
-          });
-        } catch (e) {
-          console.error(e);
-        }
-      } else {
-        try {
-          await supabase.auth.updateUser({
-            data: {
-              full_name: values.full_name,
-              phone: values.phone,
-            },
-          });
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      reset({ ...values, home_station: computeHomeStation(values.address), user_id: user.id });
+      const { error } = await supabase.from("profiles").upsert(updates);
+      if (error) throw error;
+
+      toast.success("Profile updated!");
+      reset(values);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to update profile");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div
-      className={`min-h-screen transition-colors duration-500 font-sans overflow-y-auto relative ${
-        isDark ? "bg-[#0B1120] text-slate-100" : "bg-[#FFFAF0] text-slate-900"
-      }`}
-    >
+    <div className={`relative w-full ${isDark ? "text-slate-100" : "text-slate-900"}`}>
+      {/* Background */}
       <div
         className={`fixed inset-0 pointer-events-none z-0 bg-center bg-no-repeat bg-contain transition-opacity duration-500 ${
           isDark ? "opacity-[0.03] invert" : "opacity-[0.05]"
         }`}
         style={{ backgroundImage: `url(${scalesBgUrl})` }}
       />
-      <div className="fixed inset-0 pointer-events-none transition-opacity duration-700">
-        <div
-          className={`absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full blur-[150px] mix-blend-multiply transition-colors duration-700 ${
-            isDark ? "bg-indigo-900/20" : "bg-amber-200/30"
-          }`}
-        />
-        <div
-          className={`absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full blur-[150px] mix-blend-multiply transition-colors duration-700 ${
-            isDark ? "bg-blue-900/20" : "bg-orange-200/30"
-          }`}
-        />
-      </div>
 
-      <div className="relative z-10">
-        {/* <Navbar /> */}
-        <div className="h-24" />
-        <div className="max-w-7xl mx-auto px-6 py-16">
+      <div className="relative z-10 max-w-7xl mx-auto py-6">
+        
+        {/* Header */}
         <div
           className={`mb-8 flex items-center justify-between px-6 py-4 rounded-2xl border backdrop-blur-md ${
             isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"
           }`}
         >
           <div className="flex items-center gap-4">
-            <div
-              className={`h-12 w-12 rounded-full flex items-center justify-center font-bold ${
-                isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-100 text-orange-600"
-              }`}
-            >
-              {initials || "U"}
+            <div className="relative group">
+                <div
+                className={`h-16 w-16 rounded-full overflow-hidden flex items-center justify-center font-bold text-xl border-2 ${
+                    isDark ? "bg-orange-500/20 border-orange-500/50 text-orange-400" : "bg-orange-100 border-orange-200 text-orange-600"
+                }`}
+                >
+                {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : initials}
+                </div>
+                {/* Upload Overlay */}
+                <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition-opacity">
+                    <Camera className="text-white w-6 h-6" />
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploading} />
+                </label>
             </div>
             <div>
-              <h1
-                className={`text-2xl md:text-3xl font-serif-heading font-bold ${
-                  isDark ? "text-white" : "text-slate-900"
-                }`}
-              >
-                Identity & Safety
+              <h1 className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                Citizen Identity
               </h1>
               <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                Verification and emergency readiness
+                Verification & Emergency Details
               </p>
             </div>
           </div>
           {user && <VerifiedBadge verified={watch("aadhar_verified")} />}
         </div>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className={`grid grid-cols-1 lg:grid-cols-3 gap-6`}
-        >
-          <section
-            className={`lg:col-span-2 px-6 py-6 rounded-2xl border ${
-              isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"
-            }`}
-          >
+        <form onSubmit={handleSubmit(onSubmit)} className={`grid grid-cols-1 lg:grid-cols-3 gap-6`}>
+          
+          {/* Core Identity */}
+          <section className={`lg:col-span-2 px-6 py-6 rounded-2xl border ${isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"}`}>
             <div className="flex items-center gap-2 mb-4">
               <User className="w-5 h-5 text-orange-500" />
               <h2 className="text-lg font-bold">Core Identity</h2>
@@ -265,8 +263,8 @@ export default function Profile() {
               <label className="space-y-2">
                 <span className="text-sm">Full Name</span>
                 <input
-                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
-                  {...register("full_name", { required: true })}
+                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10"
+                  {...register("full_name")}
                 />
               </label>
               <label className="space-y-2">
@@ -274,8 +272,9 @@ export default function Profile() {
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-slate-500" />
                   <input
-                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
-                    {...register("email", { required: true })}
+                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 opacity-70"
+                    {...register("email")}
+                    disabled
                   />
                 </div>
               </label>
@@ -284,8 +283,8 @@ export default function Profile() {
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-slate-500" />
                   <input
-                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
-                    {...register("phone", { required: true })}
+                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10"
+                    {...register("phone")}
                   />
                 </div>
               </label>
@@ -293,53 +292,40 @@ export default function Profile() {
                 <span className="text-sm">User ID</span>
                 <input
                   disabled
-                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10"
+                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 opacity-50"
                   {...register("user_id")}
                 />
               </label>
               <label className="space-y-2">
                 <span className="text-sm">Aadhar Status</span>
                 <div className="flex items-center gap-3">
-                  <VerifiedBadge verified={watch("aadhar_verified")} />
-                  <input
-                    type="checkbox"
-                    className="rounded"
-                    {...register("aadhar_verified")}
-                  />
-                  <span className="text-xs">Toggle for demo</span>
+                  <input type="checkbox" className="rounded" {...register("aadhar_verified")} />
+                  <span className="text-xs">Self-declare verified (Demo)</span>
                 </div>
               </label>
             </div>
           </section>
 
-          <section
-            className={`px-6 py-6 rounded-2xl border ${
-              isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"
-            }`}
-          >
+          {/* Stats Snapshot */}
+          <section className={`px-6 py-6 rounded-2xl border ${isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"}`}>
             <div className="flex items-center gap-2 mb-4">
               <FileText className="w-5 h-5 text-orange-500" />
               <h2 className="text-lg font-bold">Activity Snapshot</h2>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl border border-slate-200/50 dark:border-white/10 bg-white/70 dark:bg-white/5">
+              <div className="p-4 rounded-xl border border-slate-200/50 dark:border-white/10 bg-white/70 dark:bg-white/5 text-center">
                 <div className="text-xs uppercase font-bold text-slate-500 mb-1">FIRs Filed</div>
                 <div className="text-2xl font-extrabold">{firCount}</div>
-                <div className="text-xs text-slate-500">Open Cases</div>
               </div>
-              <div className="p-4 rounded-xl border border-slate-200/50 dark:border-white/10 bg-white/70 dark:bg-white/5">
-                <div className="text-xs uppercase font-bold text-slate-500 mb-1">Documents</div>
+              <div className="p-4 rounded-xl border border-slate-200/50 dark:border-white/10 bg-white/70 dark:bg-white/5 text-center">
+                <div className="text-xs uppercase font-bold text-slate-500 mb-1">Drafts</div>
                 <div className="text-2xl font-extrabold">{draftCount}</div>
-                <div className="text-xs text-slate-500">Saved Drafts</div>
               </div>
             </div>
           </section>
 
-          <section
-            className={`lg:col-span-3 px-6 py-6 rounded-2xl border ${
-              isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"
-            }`}
-          >
+          {/* Personal Details */}
+          <section className={`lg:col-span-3 px-6 py-6 rounded-2xl border ${isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"}`}>
             <div className="flex items-center gap-2 mb-4">
               <Building2 className="w-5 h-5 text-orange-500" />
               <h2 className="text-lg font-bold">Personal Details</h2>
@@ -351,39 +337,39 @@ export default function Profile() {
                   <Calendar className="w-4 h-4 text-slate-500" />
                   <input
                     type="date"
-                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
-                    {...register("dob", { required: true })}
+                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10"
+                    {...register("dob")}
                   />
                 </div>
               </label>
               <label className="space-y-2">
                 <span className="text-sm">Gender</span>
                 <select
-                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
-                  {...register("gender", { required: true })}
+                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10"
+                  {...register("gender")}
                 >
-                  <option value="">Select</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
+                  <option value="" className="text-black">Select</option>
+                  <option value="male" className="text-black">Male</option>
+                  <option value="female" className="text-black">Female</option>
+                  <option value="other" className="text-black">Other</option>
                 </select>
               </label>
-              <label className="space-y-2 md:col-span-1">
+              <label className="space-y-2 md:col-span-2">
                 <span className="text-sm">Permanent Address</span>
                 <div className="flex items-center gap-2">
                   <Home className="w-4 h-4 text-slate-500" />
                   <input
-                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400"
+                    className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10"
                     placeholder="House, Street, City, State"
-                    {...register("address", { required: true })}
+                    {...register("address")}
                   />
                 </div>
               </label>
               <div className="md:col-span-2">
-                <span className="text-sm">Home Station</span>
+                <span className="text-sm">Home Station (Auto-Assigned)</span>
                 <input
                   disabled
-                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10"
+                  className="w-full px-4 py-2 rounded-lg border bg-transparent border-slate-300 dark:border-white/10 opacity-70"
                   {...register("home_station")}
                 />
               </div>
@@ -394,23 +380,18 @@ export default function Profile() {
             <button
               type="submit"
               disabled={saving}
-              className={`px-6 py-3 rounded-full font-bold ${
-                isDark
-                  ? "bg-orange-500 hover:bg-orange-600 text-white"
-                  : "bg-slate-900 hover:bg-black text-white"
+              className={`px-8 py-3 rounded-full font-bold transition-all disabled:opacity-50 ${
+                isDark ? "bg-orange-500 hover:bg-orange-600 text-white" : "bg-slate-900 hover:bg-black text-white"
               }`}
             >
-              {saving ? "Saving..." : isDirty ? "Save Changes" : "Saved"}
+              {saving ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="animate-spin w-4 h-4" /> Saving...
+                  </span>
+              ) : isDirty ? "Save Changes" : "Saved"}
             </button>
           </div>
         </form>
-
-        {loading && (
-          <div className="mt-6 text-sm">
-            Loading profile...
-          </div>
-        )}
-        </div>
       </div>
     </div>
   );

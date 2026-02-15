@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTheme } from "../../context/themeContext";
 import { useAuth } from "../../context/Authcontext";
+import { supabase } from "../../lib/supabase"; // Ensure correct import path
 import {
   User,
   Mail,
@@ -11,15 +12,17 @@ import {
   Building2,
   Shield,
   MapPin,
-  Briefcase,
   Camera,
+  Loader2,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function PoliceProfile() {
   const { isDark } = useTheme();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const scalesBgUrl = "/scale.png";
 
   const {
@@ -30,9 +33,9 @@ export default function PoliceProfile() {
     reset,
   } = useForm({
     defaultValues: {
-      full_name: user?.user_metadata?.full_name || "",
-      email: user?.email || "",
-      phone: user?.user_metadata?.phone || "",
+      full_name: "",
+      email: "",
+      phone: "",
       badge_id: "",
       badge_number: "",
       station_name: "",
@@ -41,7 +44,7 @@ export default function PoliceProfile() {
       city: "",
       state: "",
       years_experience: "",
-      verified: true,
+      verified: false,
     },
     mode: "onBlur",
   });
@@ -54,23 +57,129 @@ export default function PoliceProfile() {
     .slice(0, 2)
     .toUpperCase();
 
-  const onSubmit = async (values) => {
-    setSaving(true);
+  // --- 1. FETCH DATA (Pre-fill from Signup) ---
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadProfile() {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (error) throw error;
+
+        if (mounted && data) {
+          // Load Avatar
+          if (data.avatar_url) {
+            const { data: imgData } = await supabase.storage
+              .from("avatars")
+              .createSignedUrl(data.avatar_url, 3600);
+            if (imgData) setAvatarUrl(imgData.signedUrl);
+          }
+
+          // PRE-FILL LOGIC
+          // Map 'gov_id' -> badge_number
+          // Map 'station_code' -> station_name (if name is empty)
+          reset({
+            full_name: data.full_name || "",
+            email: data.email || user.email,
+            phone: data.phone || "",
+            badge_id: data.badge_id || "",
+            badge_number: data.badge_number || data.gov_id || "",
+            station_name: data.station_name || data.station_code || "",
+            rank: data.rank || "",
+            department: data.department || "",
+            city: data.city || "",
+            state: data.state || "",
+            years_experience: data.years_experience || "",
+            verified: data.verification_status === "verified",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error);
+      }
+    }
+
+    loadProfile();
+    return () => { mounted = false; };
+  }, [user, reset]);
+
+  // --- 2. HANDLE PHOTO UPLOAD ---
+  const onPhotoChange = async (e) => {
     try {
-      // Placeholder: Integrate with backend later
-      // For now, just simulate a save and keep values in form
-      await new Promise((r) => setTimeout(r, 600));
-      reset(values);
+      setUploading(true);
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      // Upload
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Save Path
+      const { error: dbError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: filePath })
+        .eq("id", user.id);
+
+      if (dbError) throw dbError;
+
+      // Update UI
+      const { data: imgData } = await supabase.storage
+        .from("avatars")
+        .createSignedUrl(filePath, 3600);
+        
+      setAvatarUrl(imgData?.signedUrl);
+      toast.success("Profile photo updated!");
+
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload photo.");
     } finally {
-      setSaving(false);
+      setUploading(false);
     }
   };
 
-  const onPhotoChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setPhotoPreview(url);
+  // --- 3. SAVE PROFILE ---
+  const onSubmit = async (values) => {
+    setSaving(true);
+    try {
+      const updates = {
+        id: user.id,
+        full_name: values.full_name,
+        phone: values.phone,
+        badge_id: values.badge_id,
+        badge_number: values.badge_number,
+        station_name: values.station_name,
+        rank: values.rank,
+        department: values.department,
+        city: values.city,
+        state: values.state,
+        years_experience: values.years_experience,
+        updated_at: new Date(),
+      };
+
+      const { error } = await supabase.from("profiles").upsert(updates);
+      if (error) throw error;
+
+      toast.success("Profile saved successfully!");
+      reset(values);
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Failed to save profile.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -141,38 +250,43 @@ export default function PoliceProfile() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Photo Section */}
             <section
-              className={`px-6 py-6 rounded-2xl border lg:col-span-1 ${
+              className={`px-6 py-6 rounded-2xl border lg:col-span-1 flex flex-col items-center ${
                 isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"
               }`}
             >
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-4 w-full">
                 <Camera className="w-5 h-5 text-orange-500" />
                 <h2 className="text-lg font-bold">Profile Photo</h2>
               </div>
               <div className="flex flex-col items-center gap-4">
-                <div className="relative">
+                <div className="relative group">
                   <div
-                    className={`h-28 w-28 rounded-full ring-2 ring-orange-200 overflow-hidden flex items-center justify-center font-bold ${
-                      isDark ? "bg-orange-500/20 text-orange-400" : "bg-orange-50 text-orange-600"
-                    }`}
+                    className={`h-32 w-32 rounded-full ring-4 ring-orange-100 overflow-hidden flex items-center justify-center font-bold bg-slate-200`}
                   >
-                    {photoPreview ? (
-                      <img src={photoPreview} alt="preview" className="h-full w-full object-cover" />
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
                     ) : (
-                      initials || "OF"
+                      <span className="text-4xl text-slate-400">{initials}</span>
+                    )}
+                    {uploading && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <Loader2 className="animate-spin text-white" />
+                      </div>
                     )}
                   </div>
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition-opacity">
+                    <Camera className="text-white w-8 h-8" />
+                    <input type="file" accept="image/*" onChange={onPhotoChange} className="hidden" disabled={uploading} />
+                  </label>
                 </div>
-                <label className="w-full">
-                  <div className="w-full text-center text-xs font-bold px-4 py-2 rounded-lg border bg-transparent cursor-pointer hover:border-orange-400 transition-colors">
-                    Upload Photo
-                  </div>
-                  <input type="file" accept="image/*" onChange={onPhotoChange} className="hidden" />
-                </label>
+                <p className="text-xs opacity-60">Click image to update</p>
               </div>
             </section>
 
+            {/* Identity Section */}
             <section
               className={`px-6 py-6 rounded-2xl border lg:col-span-2 ${
                 isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"
@@ -183,34 +297,22 @@ export default function PoliceProfile() {
                 <h2 className="text-lg font-bold">Identity</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="space-y-2">
-                  <span className="text-sm">Full Name</span>
-                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("full_name", { required: true })} />
+                <label className="space-y-1">
+                  <span className="text-xs font-bold opacity-70 uppercase">Full Name</span>
+                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("full_name")} />
                 </label>
-                <label className="space-y-2">
-                  <span className="text-sm">Email</span>
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-slate-500" />
-                    <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("email", { required: true })} />
-                  </div>
+                <label className="space-y-1">
+                  <span className="text-xs font-bold opacity-70 uppercase">Email</span>
+                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent opacity-70" {...register("email")} disabled />
                 </label>
-                <label className="space-y-2">
-                  <span className="text-sm">Phone Number</span>
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-slate-500" />
-                    <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("phone", { required: true })} />
-                  </div>
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm">Verification Status</span>
-                  <div className="flex items-center gap-3">
-                    <input type="checkbox" className="rounded" {...register("verified")} />
-                    <span className="text-xs">Toggle Verified</span>
-                  </div>
+                <label className="space-y-1">
+                  <span className="text-xs font-bold opacity-70 uppercase">Phone</span>
+                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("phone")} />
                 </label>
               </div>
             </section>
 
+            {/* Service Details */}
             <section
               className={`px-6 py-6 rounded-2xl border lg:col-span-3 ${
                 isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"
@@ -221,96 +323,51 @@ export default function PoliceProfile() {
                 <h2 className="text-lg font-bold">Service Details</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <label className="space-y-2 md:col-span-1">
-                  <span className="text-sm">Badge ID / Reg. ID</span>
-                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("badge_id", { required: true })} />
+                <label className="space-y-1">
+                  <span className="text-xs opacity-70">Badge ID</span>
+                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("badge_id")} />
                 </label>
-                <label className="space-y-2 md:col-span-1">
-                  <span className="text-sm">Badge Number</span>
-                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("badge_number")} />
+                <label className="space-y-1">
+                  <span className="text-xs opacity-70">Badge No</span>
+                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("badge_number")} placeholder="From Signup" />
                 </label>
-                <label className="space-y-2 md:col-span-1">
-                  <span className="text-sm">Rank</span>
-                  <select className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("rank", { required: true })}>
-                    <option value="">Select</option>
-                    <option value="Director General of Police">Director General of Police</option>
-                    <option value="Additional Director General">Additional Director General</option>
-                    <option value="Inspector General">Inspector General</option>
-                    <option value="Deputy Inspector General">Deputy Inspector General</option>
-                    <option value="Senior Superintendent">Senior Superintendent</option>
-                    <option value="Superintendent of Police">Superintendent of Police</option>
-                    <option value="Additional SP">Additional SP</option>
-                    <option value="Assistant SP">Assistant SP</option>
-                    <option value="Deputy SP">Deputy SP</option>
-                    <option value="Inspector">Inspector</option>
-                    <option value="Sub-Inspector">Sub-Inspector</option>
-                    <option value="Assistant Sub-Inspector">Assistant Sub-Inspector</option>
-                    <option value="Head Constable">Head Constable</option>
-                    <option value="Constable">Constable</option>
+                <label className="space-y-1">
+                  <span className="text-xs opacity-70">Rank</span>
+                  <select className="w-full px-4 py-2 rounded-lg border bg-transparent bg-opacity-10" {...register("rank")}>
+                    <option value="" className="text-slate-900">Select Rank</option>
+                    <option value="Inspector" className="text-slate-900">Inspector</option>
+                    <option value="Sub-Inspector" className="text-slate-900">Sub-Inspector</option>
+                    <option value="Constable" className="text-slate-900">Constable</option>
+                    <option value="Superintendent" className="text-slate-900">Superintendent</option>
                   </select>
                 </label>
-                <label className="space-y-2 md:col-span-1">
-                  <span className="text-sm">Years of Experience</span>
-                  <input type="number" min="0" className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("years_experience", { required: true })} />
+                <label className="space-y-1">
+                  <span className="text-xs opacity-70">Station</span>
+                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("station_name")} />
                 </label>
-                <label className="space-y-2 md:col-span-2">
-                  <span className="text-sm">Department</span>
-                  <select className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("department", { required: true })}>
-                    <option value="">Select</option>
-                    <option value="Crime Branch">Crime Branch</option>
-                    <option value="Cyber Crime">Cyber Crime</option>
-                    <option value="Traffic">Traffic</option>
-                    <option value="Special Branch">Special Branch</option>
-                    <option value="Anti-Narcotics">Anti-Narcotics</option>
-                    <option value="Anti-Terrorism Squad">Anti-Terrorism Squad</option>
-                    <option value="Economic Offences Wing">Economic Offences Wing</option>
-                    <option value="Women & Child Safety">Women & Child Safety</option>
-                    <option value="Forensic">Forensic</option>
-                    <option value="Communications">Communications</option>
-                    <option value="Training">Training</option>
-                    <option value="Operations">Operations</option>
-                  </select>
+                <label className="space-y-1 md:col-span-2">
+                  <span className="text-xs opacity-70">City</span>
+                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("city")} />
                 </label>
-                <label className="space-y-2 md:col-span-2">
-                  <span className="text-sm">Police Station Name</span>
-                  <div className="flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-slate-500" />
-                    <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("station_name", { required: true })} />
-                  </div>
+                <label className="space-y-1 md:col-span-2">
+                  <span className="text-xs opacity-70">State</span>
+                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("state")} />
                 </label>
               </div>
             </section>
 
-            <section
-              className={`px-6 py-6 rounded-2xl border lg:col-span-3 ${
-                isDark ? "bg-white/5 border-white/10" : "bg-white/80 border-white/40"
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-orange-500" />
-                <h2 className="text-lg font-bold">Location</h2>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <label className="space-y-2 md:col-span-2">
-                  <span className="text-sm">City</span>
-                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("city", { required: true })} />
-                </label>
-                <label className="space-y-2 md:col-span-2">
-                  <span className="text-sm">State</span>
-                  <input className="w-full px-4 py-2 rounded-lg border bg-transparent" {...register("state", { required: true })} />
-                </label>
-              </div>
-            </section>
-
-            <div className="lg:col-span-3 flex items-center justify-end gap-3">
+            <div className="lg:col-span-3 flex justify-end">
               <button
-                type="submit"
                 disabled={saving}
-                className={`px-6 py-3 rounded-full font-bold ${
+                className={`px-8 py-3 rounded-full font-bold transition-all disabled:opacity-50 ${
                   isDark ? "bg-orange-500 hover:bg-orange-600 text-white" : "bg-slate-900 hover:bg-black text-white"
                 }`}
               >
-                {saving ? "Saving..." : isDirty ? "Save Changes" : "Saved"}
+                {saving ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="animate-spin w-4 h-4" /> Saving...
+                  </span>
+                ) : isDirty ? "Save Changes" : "Saved"}
               </button>
             </div>
           </form>

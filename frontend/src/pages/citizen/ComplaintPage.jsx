@@ -1,14 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { 
-  FileText, MapPin, Calendar, AlignLeft, Scale, UploadCloud, 
-  DollarSign, AlertCircle, CheckCircle2, Gavel, X, Loader2, Save 
+  FileText, MapPin, Calendar, Scale, UploadCloud, 
+  DollarSign, AlertCircle, CheckCircle2, Gavel, X, Loader2, Save, ArrowLeft
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/Authcontext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from "react-toastify"; // Assuming you have toast setup, else use alert
 
-// --- CATEGORIES CONFIGURATION ---
+// --- CONFIGURATION ---
 const CASE_CATEGORIES = [
   { id: 'criminal', label: 'Criminal Defense', icon: AlertCircle, types: ['Theft', 'Assault', 'Cyber Crime', 'Bail'] },
   { id: 'civil', label: 'Civil Rights', icon: Scale, types: ['Property Dispute', 'Breach of Contract', 'Defamation'] },
@@ -17,23 +16,19 @@ const CASE_CATEGORIES = [
 ];
 
 const BUDGET_RANGES = [
-  "Pro Bono (Free Legal Aid)",
-  "₹5,000 - ₹20,000",
-  "₹20,000 - ₹50,000",
-  "₹50,000 - ₹1 Lakh",
-  "₹1 Lakh+"
+  "Pro Bono (Free Legal Aid)", "₹5,000 - ₹20,000", "₹20,000 - ₹50,000", "₹50,000 - ₹1 Lakh", "₹1 Lakh+"
 ];
 
 const ComplaintPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation(); // To catch passed draft data
+  const location = useLocation(); 
   const fileInputRef = useRef(null);
 
   // --- STATE ---
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [draftId, setDraftId] = useState(null); // Track if we are editing a draft
+  const [draftId, setDraftId] = useState(null);
   
   const [category, setCategory] = useState(CASE_CATEGORIES[0]);
   const [formData, setFormData] = useState({
@@ -48,7 +43,7 @@ const ComplaintPage = () => {
 
   const [files, setFiles] = useState([]);
 
-  // --- INITIALIZE FROM DRAFT (If available) ---
+  // --- INITIALIZE FROM DRAFT ---
   useEffect(() => {
     if (location.state?.draftData) {
         const d = location.state.draftData;
@@ -62,16 +57,11 @@ const ComplaintPage = () => {
             budget: d.budget_range || "",
             selectionMode: "browse"
         });
-        
-        // Find and set category object
         const catObj = CASE_CATEGORIES.find(c => c.label === d.category);
         if (catObj) setCategory(catObj);
-
-        // Set files if any (assuming d.documents is array of strings)
         if (d.documents && d.documents.length > 0) {
-            // Reconstruct file objects for UI (name extracted from URL)
             const reconstructedFiles = d.documents.map(url => ({
-                name: url.split('/').pop(), // Simple name extraction
+                name: url.split('/').pop(),
                 url: url
             }));
             setFiles(reconstructedFiles);
@@ -91,23 +81,16 @@ const ComplaintPage = () => {
     setFormData(prev => ({ ...prev, caseType: "" })); 
   };
 
-  // --- FILE UPLOAD LOGIC ---
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${user?.id}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('case-files')
-        .upload(filePath, file);
-
+      const { error: uploadError } = await supabase.storage.from('case-files').upload(filePath, file);
       if (uploadError) throw uploadError;
-
       const { data } = supabase.storage.from('case-files').getPublicUrl(filePath);
       setFiles(prev => [...prev, { name: file.name, url: data.publicUrl }]);
     } catch (error) {
@@ -122,14 +105,10 @@ const ComplaintPage = () => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // --- SAVE DRAFT LOGIC ---
+  // --- SAVE / SUBMIT LOGIC ---
   const handleSaveDraft = async () => {
-    if (!formData.title) {
-        alert("Please enter at least a Case Title to save a draft.");
-        return;
-    }
+    if (!formData.title) return alert("Enter a Title to save draft.");
     setLoading(true);
-
     const payload = {
         user_id: user?.id,
         category: category.label,
@@ -140,19 +119,14 @@ const ComplaintPage = () => {
         location: formData.location,
         budget_range: formData.budget,
         documents: files.map(f => f.url),
-        status: 'Draft' // <--- KEY STATUS
+        status: 'Draft'
     };
-
     try {
         if (draftId) {
-            // Update existing draft
-            const { error } = await supabase.from('cases').update(payload).eq('id', draftId);
-            if (error) throw error;
+            await supabase.from('cases').update(payload).eq('id', draftId);
         } else {
-            // Create new draft
-            const { data, error } = await supabase.from('cases').insert([payload]).select();
-            if (error) throw error;
-            setDraftId(data[0].id); // Set ID so future saves are updates
+            const { data } = await supabase.from('cases').insert([payload]).select();
+            setDraftId(data[0].id);
         }
         alert("Draft Saved Successfully!");
     } catch (error) {
@@ -163,13 +137,8 @@ const ComplaintPage = () => {
     }
   };
 
-  // --- SUBMIT CASE (Finalize) ---
   const handleSubmit = async () => {
-    if (!formData.title || !formData.description || !formData.caseType) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-
+    if (!formData.title || !formData.description || !formData.caseType) return alert("Please fill in required fields.");
     setLoading(true);
     try {
       const payload = {
@@ -182,32 +151,23 @@ const ComplaintPage = () => {
         location: formData.location,
         budget_range: formData.budget,
         documents: files.map(f => f.url),
-        status: 'Open' // <--- STATUS CHANGES TO OPEN
+        status: 'Open'
       };
-
       let finalCaseId = draftId;
-
       if (draftId) {
-         // Update Draft to Open
-         const { error } = await supabase.from('cases').update(payload).eq('id', draftId);
-         if (error) throw error;
+         await supabase.from('cases').update(payload).eq('id', draftId);
       } else {
-         // Insert New Case
-         const { data, error } = await supabase.from('cases').insert([payload]).select();
-         if (error) throw error;
+         const { data } = await supabase.from('cases').insert([payload]).select();
          finalCaseId = data[0].id;
       }
-
-      // Redirect
       if (formData.selectionMode === 'browse') {
         navigate('/find-lawyer', { state: { caseId: finalCaseId, category: category.label } });
       } else {
-        alert("Case Filed! Our AI is matching you...");
+        alert("Case Filed Successfully!");
         navigate('/my-cases');
       }
-
     } catch (error) {
-      console.error("Submission error:", error);
+      console.error(error);
       alert("Failed to file case.");
     } finally {
       setLoading(false);
@@ -215,161 +175,179 @@ const ComplaintPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-10 px-4">
-      <div className="max-w-4xl mx-auto animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[#F8FAFC] p-6 font-sans">
+      {/* Increased max-width to 7xl for "Zoom Out" effect */}
+      <div className="max-w-7xl mx-auto">
         
-        {/* Header */}
-        <div className="text-center mb-10">
-           <h1 className="text-3xl md:text-4xl font-bold font-serif-heading text-slate-900 mb-3">
-             {draftId ? "Resume Case Filing" : "File a Legal Case"}
-           </h1>
-           <p className="text-slate-500 max-w-xl mx-auto">
-             Provide details about your case to connect with the right legal experts.
-           </p>
-           {/* Link to view Drafts */}
-           <button onClick={() => navigate('/case-drafts')} className="mt-4 text-sm font-bold text-slate-600 underline hover:text-slate-900">
-              View Saved Drafts
+        {/* Header - Slim */}
+        <div className="flex justify-between items-center mb-5">
+           <div className="flex items-center gap-3">
+             <button onClick={() => navigate(-1)} className="p-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-full transition-colors shadow-sm">
+                <ArrowLeft size={20} className="text-slate-600"/>
+             </button>
+             <div>
+                <h1 className="text-2xl font-bold text-slate-900">{draftId ? "Resume Filing" : "New Case Filing"}</h1>
+             </div>
+           </div>
+           <button onClick={() => navigate('/case-drafts')} className="text-xs font-bold text-orange-600 hover:underline bg-orange-50 px-4 py-2 rounded-lg">
+              View My Drafts
            </button>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-           
-           <div className="h-1.5 bg-slate-100 w-full">
-              <div className="h-full bg-slate-900 w-1/3"></div>
-           </div>
-
-           <div className="p-6 md:p-10 space-y-8">
-               
-               {/* 1. Category */}
-               <div className="space-y-4">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Step 1: Classification</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {CASE_CATEGORIES.map((cat) => {
-                      const Icon = cat.icon;
-                      const isSelected = category.id === cat.id;
-                      return (
-                        <button 
-                          key={cat.id}
-                          onClick={() => handleCategorySelect(cat.id)}
-                          className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all duration-200
-                            ${isSelected ? 'bg-slate-900 border-slate-900 text-white shadow-lg scale-[1.02]' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50'}
-                          `}
-                        >
-                          <Icon className={`w-6 h-6 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
-                          <span className="font-bold text-sm">{cat.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-               </div>
-
-               {/* 2. Details */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                     <label className="text-sm font-bold text-slate-700">Specific Charge / Type</label>
-                     <select name="caseType" value={formData.caseType} onChange={handleInputChange} className="w-full p-3.5 rounded-lg border border-slate-200 bg-slate-50 outline-none">
-                       <option value="">Select Type...</option>
-                       {category.types.map(t => <option key={t} value={t}>{t}</option>)}
-                     </select>
-                  </div>
-                  <div className="space-y-2">
-                     <label className="text-sm font-bold text-slate-700">Estimated Budget</label>
-                     <div className="relative">
-                       <DollarSign className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
-                       <select name="budget" value={formData.budget} onChange={handleInputChange} className="w-full pl-10 p-3.5 rounded-lg border border-slate-200 bg-slate-50 outline-none">
-                         <option value="">Select Budget Range...</option>
-                         {BUDGET_RANGES.map(b => <option key={b} value={b}>{b}</option>)}
-                       </select>
-                     </div>
-                  </div>
-               </div>
-
-               <div className="space-y-6">
-                  <div className="space-y-2">
-                     <label className="text-sm font-bold text-slate-700">Case Subject / Title</label>
-                     <input name="title" value={formData.title} onChange={handleInputChange} className="w-full p-3.5 rounded-lg border border-slate-200 bg-slate-50 outline-none" placeholder="e.g. Unlawful Termination" />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                       <label className="text-sm font-bold text-slate-700">Incident Date</label>
-                       <input type="date" name="incidentDate" value={formData.incidentDate} onChange={handleInputChange} className="w-full p-3.5 rounded-lg border border-slate-200 bg-slate-50 outline-none" />
+        {/* MAIN LAYOUT GRID - Reduced gap to 5 */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-full">
+            
+            {/* LEFT COLUMN: MAIN FORM (Span 8) */}
+            <div className="lg:col-span-8 space-y-5">
+                
+                {/* 1. Category Card */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 block">Step 1: Case Category</label>
+                    <div className="grid grid-cols-4 gap-3">
+                        {CASE_CATEGORIES.map((cat) => {
+                            const Icon = cat.icon;
+                            const isSelected = category.id === cat.id;
+                            return (
+                                <button 
+                                    key={cat.id} 
+                                    onClick={() => handleCategorySelect(cat.id)}
+                                    className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${isSelected ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-slate-50 text-slate-500 border-transparent hover:bg-slate-100'}`}
+                                >
+                                    <Icon className="w-5 h-5 mb-2" />
+                                    <span className="text-xs font-bold text-center leading-tight">{cat.label}</span>
+                                </button>
+                            );
+                        })}
                     </div>
-                    <div className="space-y-2">
-                       <label className="text-sm font-bold text-slate-700">Location</label>
-                       <input type="text" name="location" value={formData.location} onChange={handleInputChange} className="w-full p-3.5 rounded-lg border border-slate-200 bg-slate-50 outline-none" placeholder="City, State" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                     <label className="text-sm font-bold text-slate-700">Detailed Description</label>
-                     <textarea name="description" rows="5" value={formData.description} onChange={handleInputChange} className="w-full p-3.5 rounded-lg border border-slate-200 bg-slate-50 outline-none resize-none" placeholder="Provide a chronological account..."></textarea>
-                  </div>
-               </div>
+                </div>
 
-               {/* 3. Files */}
-               <div className="space-y-4">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Step 2: Evidence</label>
-                  <div onClick={() => fileInputRef.current.click()} className="border-2 border-dashed border-slate-300 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 transition-all group">
-                     <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf,.jpg,.png,.docx" />
-                     <div className="p-4 bg-blue-50 text-blue-600 rounded-full mb-3 group-hover:scale-110 transition-transform">
-                        {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <UploadCloud className="w-6 h-6" />}
-                     </div>
-                     <p className="font-bold text-slate-700">Click to upload documents</p>
-                  </div>
-                  {files.length > 0 && (
-                    <div className="space-y-2">
-                      {files.map((file, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
-                           <div className="flex items-center gap-3">
-                              <FileText className="w-5 h-5 text-blue-500" />
-                              <span className="text-sm font-bold text-slate-700 truncate max-w-[200px]">{file.name}</span>
-                           </div>
-                           <button onClick={() => removeFile(idx)}><X className="w-4 h-4 text-slate-400 hover:text-red-500" /></button>
+                {/* 2. Details Card */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 block">Step 2: Case Details</label>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                        <div className="col-span-2">
+                            <label className="text-xs font-bold text-slate-700 mb-1.5 block">Case Title <span className="text-red-500">*</span></label>
+                            {/* Inputs made smaller with py-2.5 and text-sm */}
+                            <input name="title" value={formData.title} onChange={handleInputChange} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all" placeholder="e.g. Property Dispute in Rohini Sector 12" />
                         </div>
-                      ))}
+
+                        <div>
+                            <label className="text-xs font-bold text-slate-700 mb-1.5 block">Specific Charge <span className="text-red-500">*</span></label>
+                            <select name="caseType" value={formData.caseType} onChange={handleInputChange} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none cursor-pointer">
+                                <option value="">Select Type...</option>
+                                {category.types.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold text-slate-700 mb-1.5 block">Budget Range</label>
+                            <div className="relative">
+                                <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                                <select name="budget" value={formData.budget} onChange={handleInputChange} className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none cursor-pointer">
+                                    <option value="">Select Budget...</option>
+                                    {BUDGET_RANGES.map(b => <option key={b} value={b}>{b}</option>)}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold text-slate-700 mb-1.5 block">Incident Date</label>
+                            <div className="relative">
+                                <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                                <input type="date" name="incidentDate" value={formData.incidentDate} onChange={handleInputChange} className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none cursor-pointer" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold text-slate-700 mb-1.5 block">Location</label>
+                            <div className="relative">
+                                <MapPin className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                                <input type="text" name="location" value={formData.location} onChange={handleInputChange} className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none" placeholder="City, State" />
+                            </div>
+                        </div>
+
+                        <div className="col-span-2">
+                            <label className="text-xs font-bold text-slate-700 mb-1.5 block">Description <span className="text-red-500">*</span></label>
+                            <textarea name="description" rows="4" value={formData.description} onChange={handleInputChange} className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none resize-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all" placeholder="Briefly describe the incident, timeline, and key parties involved..."></textarea>
+                        </div>
                     </div>
-                  )}
-               </div>
+                </div>
+            </div>
 
-               {/* 4. Selection Mode */}
-               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                  <h3 className="font-bold text-slate-800 mb-3">How would you like to proceed?</h3>
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <label className={`flex-1 p-4 border rounded-xl cursor-pointer transition-all ${formData.selectionMode === 'browse' ? 'bg-white border-slate-900 ring-1 ring-slate-900' : 'bg-transparent border-slate-200 hover:bg-white'}`}>
-                       <div className="flex items-center gap-3">
-                          <input type="radio" name="selectionMode" value="browse" checked={formData.selectionMode === 'browse'} onChange={handleInputChange} className="accent-slate-900 w-5 h-5" />
-                          <div><div className="font-bold text-slate-900">Choose Lawyer Myself</div><div className="text-xs text-slate-500">Browse directory manually.</div></div>
-                       </div>
-                    </label>
-                    <label className={`flex-1 p-4 border rounded-xl cursor-pointer transition-all ${formData.selectionMode === 'auto' ? 'bg-white border-slate-900 ring-1 ring-slate-900' : 'bg-transparent border-slate-200 hover:bg-white'}`}>
-                       <div className="flex items-center gap-3">
-                          <input type="radio" name="selectionMode" value="auto" checked={formData.selectionMode === 'auto'} onChange={handleInputChange} className="accent-slate-900 w-5 h-5" />
-                          <div><div className="font-bold text-slate-900">AI Auto-Match</div><div className="text-xs text-slate-500">Let us find the best lawyer.</div></div>
-                       </div>
-                    </label>
-                  </div>
-               </div>
+            {/* RIGHT COLUMN: SIDEBAR (Span 4) */}
+            <div className="lg:col-span-4 flex flex-col gap-5">
+                
+                {/* Upload Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 block">Step 3: Evidence</label>
+                    <div onClick={() => fileInputRef.current.click()} className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 hover:border-orange-300 transition-all group">
+                        <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf,.jpg,.png,.docx" />
+                        <div className="p-3 bg-blue-50 rounded-full mb-2 group-hover:scale-110 transition-transform">
+                            {uploading ? <Loader2 className="w-6 h-6 animate-spin text-blue-500" /> : <UploadCloud className="w-6 h-6 text-blue-500" />}
+                        </div>
+                        <span className="text-sm font-bold text-slate-700">Click to Upload</span>
+                        <span className="text-xs text-slate-400 mt-1">PDF, JPG, PNG (Max 5MB)</span>
+                    </div>
+                    
+                    {/* File List */}
+                    {files.length > 0 && (
+                        <div className="mt-4 space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                            {files.map((file, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-lg group hover:bg-white hover:shadow-sm transition-all">
+                                    <div className="flex items-center gap-3 overflow-hidden">
+                                        <div className="p-1.5 bg-white rounded border border-slate-200">
+                                            <FileText className="w-4 h-4 text-blue-500" />
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-700 truncate max-w-[140px]">{file.name}</span>
+                                    </div>
+                                    <button onClick={() => removeFile(idx)} className="text-slate-400 hover:text-red-500 transition-colors"><X className="w-4 h-4" /></button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
-               {/* Action Buttons */}
-               <div className="pt-4 flex gap-4">
-                 <button 
-                   onClick={handleSaveDraft}
-                   disabled={loading || uploading}
-                   className="flex-1 py-4 border-2 border-slate-200 text-slate-600 font-bold text-lg rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-                 >
-                   <Save className="w-5 h-5" /> Save as Draft
-                 </button>
-                 
-                 <button 
-                   onClick={handleSubmit}
-                   disabled={loading || uploading}
-                   className="flex-[2] py-4 bg-slate-900 text-white font-bold text-lg rounded-xl hover:bg-black transition-all flex items-center justify-center gap-2 shadow-lg"
-                 >
-                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                   {loading ? "Processing..." : "File Case & Proceed"}
-                 </button>
-               </div>
+                {/* Preference */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 block">Step 4: Matching</label>
+                    <div className="space-y-3">
+                        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${formData.selectionMode === 'browse' ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                            <input type="radio" name="selectionMode" value="browse" checked={formData.selectionMode === 'browse'} onChange={handleInputChange} className="hidden" />
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.selectionMode === 'browse' ? 'border-white' : 'border-slate-300'}`}>
+                                {formData.selectionMode === 'browse' && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+                            </div>
+                            <div>
+                                <div className="text-sm font-bold">I'll Choose Lawyer</div>
+                                <div className={`text-xs ${formData.selectionMode === 'browse' ? 'text-slate-300' : 'text-slate-500'}`}>Manual selection from directory</div>
+                            </div>
+                        </label>
 
-           </div>
+                        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${formData.selectionMode === 'auto' ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                            <input type="radio" name="selectionMode" value="auto" checked={formData.selectionMode === 'auto'} onChange={handleInputChange} className="hidden" />
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.selectionMode === 'auto' ? 'border-white' : 'border-slate-300'}`}>
+                                {formData.selectionMode === 'auto' && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+                            </div>
+                            <div>
+                                <div className="text-sm font-bold">AI Auto-Match</div>
+                                <div className={`text-xs ${formData.selectionMode === 'auto' ? 'text-slate-300' : 'text-slate-500'}`}>Best match for your case</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                {/* Actions */}
+                <div className="grid grid-cols-2 gap-4 mt-auto">
+                    <button onClick={handleSaveDraft} disabled={loading} className="py-4 border-2 border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2">
+                        <Save size={16} /> Save Draft
+                    </button>
+                    <button onClick={handleSubmit} disabled={loading} className="py-4 bg-orange-600 text-white font-bold text-sm rounded-xl hover:bg-orange-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-200">
+                        {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                        Submit Case
+                    </button>
+                </div>
+
+            </div>
         </div>
       </div>
     </div>
