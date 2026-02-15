@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -12,14 +12,8 @@ import {
   Gavel,
   Briefcase
 } from "lucide-react";
-
-// Mock Data
-const stats = [
-  { label: "Active Cases", value: "12", icon: Scale, color: "text-orange-700", bg: "bg-orange-100" },
-  { label: "Pending Requests", value: "5", icon: Users, color: "text-amber-700", bg: "bg-amber-100" },
-  { label: "Hours Billed", value: "34.5", icon: Clock, color: "text-slate-700", bg: "bg-slate-100" },
-  { label: "Success Rate", value: "92%", icon: TrendingUp, color: "text-emerald-700", bg: "bg-emerald-100" },
-];
+import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../context/Authcontext";
 
 const schedule = [
   { time: "10:00 AM", title: "Bail Hearing: State vs. Kumar", type: "Court", location: "High Court, Room 402" },
@@ -29,6 +23,63 @@ const schedule = [
 
 const LawyerDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [activeCases, setActiveCases] = useState(0);
+  const [pendingRequests, setPendingRequests] = useState(0);
+  const [hoursBilled, setHoursBilled] = useState(0);
+  const [successRate, setSuccessRate] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchCounts = async () => {
+      const activeRes = await supabase.from("cases").select("id", { count: "exact", head: true }).eq("lawyer_id", user.id).eq("status", "Active");
+      const pendingRes = await supabase.from("cases").select("id", { count: "exact", head: true }).eq("lawyer_id", user.id).eq("status", "Pending Acceptance");
+      const successRes = await supabase.from("cases").select("id,status", { count: "exact", head: false }).eq("lawyer_id", user.id).in("status", ["Resolved", "Closed", "Rejected"]);
+
+      const activeCnt = activeRes.count ?? 0;
+      const pendingCnt = pendingRes.count ?? 0;
+      const totalResolved = (successRes.data || []).filter(c => c.status === "Resolved" || c.status === "Closed").length;
+      const totalClosedSet = successRes.data?.length ?? 0;
+      const rate = totalClosedSet > 0 ? Math.round((totalResolved / totalClosedSet) * 100) : 0;
+
+      setActiveCases(activeCnt);
+      setPendingRequests(pendingCnt);
+      setSuccessRate(rate);
+    };
+    fetchCounts();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchHours = async () => {
+      const { data } = await supabase
+        .from("legal_events")
+        .select("start_time,end_time")
+        .eq("lawyer_id", user.id);
+      let mins = 0;
+      (data || []).forEach(e => {
+        const start = new Date(e.start_time);
+        const end = new Date(e.end_time);
+        const diff = (end - start) / 60000;
+        if (!Number.isNaN(diff) && diff > 0) mins += diff;
+      });
+      const hours = Math.round((mins / 60) * 10) / 10;
+      setHoursBilled(hours);
+    };
+    fetchHours();
+  }, [user]);
+
+  const todayLabel = useMemo(() => {
+    const d = new Date();
+    return d.toLocaleDateString([], { month: "short", day: "2-digit", year: "numeric" });
+  }, []);
+
+  const stats = [
+    { label: "Active Cases", value: String(activeCases), icon: Scale, color: "text-orange-700", bg: "bg-orange-100" },
+    { label: "Pending Requests", value: String(pendingRequests), icon: Users, color: "text-amber-700", bg: "bg-amber-100" },
+    { label: "Hours Billed", value: String(hoursBilled), icon: Clock, color: "text-slate-700", bg: "bg-slate-100" },
+    { label: "Success Rate", value: `${successRate}%`, icon: TrendingUp, color: "text-emerald-700", bg: "bg-emerald-100" },
+  ];
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
@@ -81,7 +132,7 @@ const LawyerDashboard = () => {
              </h2>
              <div className="flex items-center gap-2">
                <span className="text-xs font-bold px-2 py-1 bg-slate-50 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-                 Feb 14, 2026
+                {todayLabel}
                </span>
                <Link
                  to="/lawyer/schedule"
