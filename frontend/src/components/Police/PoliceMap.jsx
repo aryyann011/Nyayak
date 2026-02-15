@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Circle, useMapEvents, Rectangle, Popup } from 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../../lib/supabase";
 
 const PoliceMap = () => {
   const [locations, setLocations] = useState([]);

@@ -42,10 +42,12 @@ import Casedetails from "./pages/lawyer/FiledCaseDetail";
 /* ================= PAYMENT ================= */
 import PaymentPage from "./pages/PaymentPage";
 import LawyerCaseRequests from "./pages/lawyer/CaseRequest";
-import LawyerDocket from "./pages/lawyer/CaseManagement";
+import LawyerDocket from "./pages/lawyer/MyDocket";
 import CaseDrafts from "./pages/citizen/CaseDrafts";
 import PaymentSuccess from "./pages/PaymentSuccess";
-import Schedule from "./pages/lawyer/schedule/Schedule";
+import Schedule from "./pages/lawyer/Schedule";
+import ActiveCaseDetails from "./pages/lawyer/ActiveCaseDetail";
+
 function App() {
   return (
     <ThemeProvider>
@@ -95,6 +97,7 @@ function App() {
               <Route path="/lawyer/requests" element={<LawyerCaseRequests/>} />
               <Route path="/lawyer/case/:id" element={<Casedetails />} />
               <Route path="/lawyer/schedule" element={<Schedule/>} />
+              <Route path="/lawyer/active-cases/:id" element={<ActiveCaseDetails/>} />
               <Route
                 path="/lawyer/cases"
                 element={<LawyerDocket />}
