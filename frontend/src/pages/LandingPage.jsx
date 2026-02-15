@@ -20,7 +20,8 @@ const LandingPage = () => {
   useEffect(() => {
     if (!loading && user) {
       const role = userRole || 'citizen';
-      if (role === 'police') {
+      if (role === 'admin') navigate('/admin', { replace: true });
+      else if (role === 'police') {
         navigate('/police-dashboard', { replace: true });
       } else if (role === 'lawyer') {
         navigate('/lawyer/legal-dashboard', { replace: true });

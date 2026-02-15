@@ -47,6 +47,9 @@ import CaseDrafts from "./pages/citizen/CaseDrafts";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Schedule from "./pages/lawyer/Schedule";
 import ActiveCaseDetails from "./pages/lawyer/ActiveCaseDetail";
+import VerificationPending from "./pages/VerificationPending";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+import AdminUserDetails from "./pages/Admin/AdminUserDetails";
 
 function App() {
   return (
@@ -62,8 +65,21 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/verification-pending" element={<VerificationPending />} />
 
-            <Route path="/payment-success" element={<PaymentSuccess />} />
+            <Route
+            path="/admin"
+              element={
+                <ProtectedRoute>
+                    <AdminDashboard />
+                </ProtectedRoute>
+              }
+            ></Route>
+            <Route path="/admin/user/:id" element={
+              <ProtectedRoute>
+                    <AdminUserDetails />
+                </ProtectedRoute>
+            } />
 
             <Route
               element={
@@ -120,6 +136,7 @@ function App() {
               <Route path="/complaint" element={<ComplaintPage/>} />
               <Route path="/emergency-logs" element={<EmergencyLogs/>} />
               <Route path="/find-lawyer" element={<FindLawyer/>} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment" element={<PaymentPage />} />
               <Route path="/cases" element={<MyCases />} />
 

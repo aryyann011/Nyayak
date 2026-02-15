@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useAuth } from "../context/Authcontext"; 
-import { Scale, Lock, Mail, ArrowRight, Shield, User, Briefcase } from "lucide-react";
+import { useAuth } from "../context/Authcontext";
+import { supabase } from "../lib/supabase"; 
+import { Scale, Lock, Mail, ArrowRight, Shield, User, Briefcase, Gavel, Loader2 } from "lucide-react"; // Added Gavel icon
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import justiceBg from "../assets/justice-bg.jpg";
@@ -22,21 +23,52 @@ const LoginPage = () => {
         if (!login) return;
         setError("");
         setIsLoading(true);
+        
         try {
+            // 1. Perform Auth Login
             const response = await login(data);
-            if (response?.user || response?.session) {
-                toast.success("Welcome back!");
-                // Get role from response or from user metadata
-                const user = response?.user || response?.session?.user;
-                const role = user?.user_metadata?.role || 'citizen';
-                
-                if (role === 'police') navigate('/police-dashboard', { replace: true });
-                else if (role === 'lawyer') navigate('/lawyer/legal-dashboard', { replace: true });
-                else navigate('/dashboard', { replace: true });
+            const user = response?.user || response?.session?.user;
+
+            if (!user) throw new Error("Login failed. User not found.");
+
+            // 2. Fetch Profile to check Verification Status & Role
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('role, verification_status')
+                .eq('id', user.id)
+                .single();
+
+            if (profileError) {
+                console.error("Profile fetch error:", profileError);
             }
+
+            const role = profile?.role || user.user_metadata?.role || 'citizen';
+            const status = profile?.verification_status || 'pending';
+
+            // 3. SECURITY GATEKEEPER logic
+            if (status === 'pending' || status === 'rejected') {
+                toast.info("Verification status: " + status.toUpperCase());
+                navigate('/verification-pending', { replace: true });
+                return;
+            }
+
+            // 4. Redirect based on Role
+            toast.success(`Welcome back, ${role === 'admin' ? 'Admin' : 'Officer'}!`);
+            
+            if (role === 'admin') {
+                navigate('/admin', { replace: true }); // Admin Dashboard
+            } else if (role === 'police') {
+                navigate('/police-dashboard', { replace: true });
+            } else if (role === 'lawyer') {
+                navigate('/lawyer/legal-dashboard', { replace: true });
+            } else {
+                navigate('/dashboard', { replace: true });
+            }
+
         } catch (error) {
+            console.error("Login process error:", error);
             setError(error.message);
-            toast.error("Login Failed");
+            toast.error(error.message || "Login Failed");
         } finally {
             setIsLoading(false);
         }
@@ -46,7 +78,8 @@ const LoginPage = () => {
         const credentials = {
             citizen: ["citizen@demo.com", "pass1234"],
             police: ["officer@police.gov.in", "pass1234"],
-            lawyer: ["advocate@law.com", "pass1234"]
+            lawyer: ["advocate@law.com", "pass1234"],
+            admin: ["admin@nyaya.gov.in", "pass1234"] // New Admin Credential
         };
         setValue("email", credentials[role][0]);
         setValue("password", credentials[role][1]);
@@ -55,7 +88,7 @@ const LoginPage = () => {
     return (
         <div className="min-h-screen w-full flex bg-[#FFFAF0] font-sans">
             
-            {/* LEFT SIDE: BRANDING (INSANE LEVEL CONSISTENCY) */}
+            {/* LEFT SIDE: BRANDING */}
             <div className="hidden lg:flex w-1/2 relative flex-col justify-between p-16 overflow-hidden">
                 <motion.div
                     initial={{ scale: 1.15, opacity: 0 }}
@@ -67,7 +100,6 @@ const LoginPage = () => {
 
                 <div className="absolute inset-0 bg-gradient-to-b from-[#0B1120]/95 via-[#0B1120]/80 to-[#0B1120]/95"></div>
 
-                {/* Light Sweep Animation */}
                 <motion.div 
                     animate={{ x: [-600, 1200], opacity: [0, 0.2, 0] }}
                     transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
@@ -126,9 +158,6 @@ const LoginPage = () => {
                         "Satyameva Jayate"
                     </blockquote>
                 </motion.div>
-
-                {/* Ambient Glow */}
-                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-orange-600/10 blur-[120px] rounded-full"></div>
             </div>
 
             {/* RIGHT SIDE: FORM */}
@@ -186,23 +215,30 @@ const LoginPage = () => {
                             whileTap={{ scale: 0.98 }}
                             type="submit" 
                             disabled={isLoading}
-                            className="w-full h-14 bg-[#0B1120] hover:bg-black text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl shadow-slate-200"
+                            className="w-full h-14 bg-[#0B1120] hover:bg-black text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl shadow-slate-200 disabled:opacity-70"
                         >
-                            {isLoading ? "Authenticating..." : "Sign in"}
-                            {!isLoading && <ArrowRight className="w-4 h-4" />}
+                            {isLoading ? (
+                                <>Authenticating <Loader2 className="animate-spin w-4 h-4" /></>
+                            ) : (
+                                <>Sign in <ArrowRight className="w-4 h-4" /></>
+                            )}
                         </motion.button>
                     </form>
 
+                    {/* DEMO ACCESS SECTION */}
                     <div className="mt-10">
                         <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-[0.2em]">
                             <span className="px-4 bg-[#FFFAF0] text-slate-400 relative z-10">Quick Demo Access</span>
                             <div className="absolute inset-0 top-1/2 -translate-y-1/2 border-t border-slate-200"></div>
                         </div>
 
-                        <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="mt-6 grid grid-cols-4 gap-3">
                             <DemoButton icon={<User className="w-5 h-5" />} label="Citizen" onClick={() => handleDemoLogin('citizen')} />
                             <DemoButton icon={<Shield className="w-5 h-5" />} label="Police" onClick={() => handleDemoLogin('police')} />
                             <DemoButton icon={<Briefcase className="w-5 h-5" />} label="Lawyer" onClick={() => handleDemoLogin('lawyer')} />
+                            
+                            {/* NEW ADMIN BUTTON */}
+                            <DemoButton icon={<Gavel className="w-5 h-5" />} label="Admin" highlight onClick={() => handleDemoLogin('admin')} />
                         </div>
                     </div>
                 </motion.div>
@@ -211,16 +247,23 @@ const LoginPage = () => {
     );
 };
 
-const DemoButton = ({ icon, label, onClick }) => (
+const DemoButton = ({ icon, label, onClick, highlight }) => (
     <motion.button 
         whileHover={{ y: -3, backgroundColor: '#FFF' }}
         whileTap={{ scale: 0.95 }}
         type="button" 
         onClick={onClick} 
-        className="flex flex-col items-center justify-center p-4 border-2 border-slate-100 bg-white/50 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/10 rounded-2xl transition-all group"
+        className="flex flex-col items-center justify-center p-3 border-2 rounded-2xl transition-all group
+            
+            border-slate-100 bg-white/50 hover:border-orange-500 hover:shadow-lg hover:shadow-orange-500/10
+        "
     >
-        <div className="mb-2 text-slate-400 group-hover:text-orange-500 transition-colors">{icon}</div>
-        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-orange-700">{label}</span>
+        <div className={`mb-1 transition-colors text-slate-400 group-hover:text-orange-500'`}>
+            {icon}
+        </div>
+        <span className={`text-[9px] font-bold uppercase tracking-wider  'text-slate-500 group-hover:text-orange-700'`}>
+            {label}
+        </span>
     </motion.button>
 );
 

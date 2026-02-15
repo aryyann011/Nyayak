@@ -1,175 +1,241 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useAuth } from "../context/Authcontext"; 
-import { Mail, Lock, User, Phone, Shield, Briefcase, ArrowRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "../lib/supabase"; // Direct Import
+import { Mail, Lock, User, Phone, Shield, Briefcase, ArrowRight, Upload, Loader2, FileText, Building2, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import justiceBg from "../assets/justice-bg.jpg";
 
 const SignupPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [selectedRole, setSelectedRole] = useState("citizen");
+    const [idFile, setIdFile] = useState(null);
     const navigate = useNavigate();
+    
+    // We do NOT use 'signup' from useAuth() because it is returning undefined
     const { register, handleSubmit, formState: { errors } } = useForm();
-    const { signup } = useAuth();
 
-    const onSubmit = async (data) => {
+    const uploadIdProof = async (userId, file) => {
+        if (!file) return null;
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${userId}_ID.${fileExt}`;
+        const filePath = `${selectedRole}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('id_proofs')
+            .upload(filePath, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+        return filePath; 
+    };
+
+    const onSubmit = async (formData) => {
         setIsLoading(true);
+        console.log("Starting signup for:", formData.email);
+
         try {
-            await signup(data.email, data.password, data.fullName, selectedRole, data.phone);
-            toast.success("Account created! Redirecting...");
+            // 1. Validation for ID Card
+            if ((selectedRole === 'police' || selectedRole === 'lawyer') && !idFile) {
+                toast.error("Please upload your Official ID Card.");
+                setIsLoading(false);
+                return;
+            }
+
+            // 2. DIRECT SUPABASE CALL (Bypassing AuthContext to fix 'undefined' error)
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: formData.email,
+                password: formData.password,
+                options: {
+                    data: {
+                        full_name: formData.fullName,
+                        role: selectedRole,
+                        phone: formData.phone,
+                    },
+                },
+            });
+
+            // 3. Handle Auth Errors
+            if (authError) {
+                if (authError.message.includes("already registered")) {
+                    toast.error("User already registered. Please login.");
+                    navigate("/login");
+                    return;
+                }
+                throw authError;
+            }
+
+            const user = authData.user;
             
-            const routes = { police: "/police-dashboard", lawyer: "/legal-dashboard" };
-            navigate(routes[selectedRole] || "/dashboard");
+            // 4. Critical Safety Check
+            if (!user || !user.id) {
+                console.error("Full Auth Response:", authData);
+                throw new Error("Signup successful, but Supabase did not return a User ID. Check if Email Confirmation is disabled.");
+            }
+
+            console.log("User created successfully:", user.id);
+
+            // 5. Upload ID Proof
+            let idDocPath = null;
+            if (selectedRole !== 'citizen' && idFile) {
+                try {
+                    idDocPath = await uploadIdProof(user.id, idFile);
+                } catch (err) {
+                    console.error("Image upload failed (non-critical):", err);
+                }
+            }
+
+            // 6. Create Profile Row (Manual Upsert)
+            const updatePayload = {
+                id: user.id,
+                email: formData.email,
+                full_name: formData.fullName,
+                role: selectedRole,
+                phone: formData.phone,
+                gov_id: formData.govId || null,
+                station_code: formData.stationCode || null,
+                id_document_url: idDocPath || null,
+                verification_status: selectedRole === 'citizen' ? 'verified' : 'pending'
+            };
+
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert(updatePayload);
+
+            if (profileError) {
+                console.error("Profile Insert Error:", profileError);
+                toast.warning("Account created, but profile sync failed.");
+            }
+
+            // 7. Success & Redirect
+            if (selectedRole === 'citizen') {
+                toast.success("Welcome! Redirecting...");
+                navigate("/dashboard");
+            } else {
+                toast.info("Application submitted for verification.");
+                navigate("/verification-pending");
+            }
+
         } catch (error) {
-            toast.error(error.message);
+            console.error("Signup System Error:", error);
+            toast.error(error.message || "An unexpected error occurred.");
         } finally {
             setIsLoading(false);
         }
     };
 
+    // Helper to catch validation errors
+    const onError = (errors) => {
+        console.log("Form Validation Errors:", errors);
+        toast.error("Please fill in all required fields marked in red.");
+    };
+
     return (
-        <div className="min-h-screen w-full flex bg-[#FFFAF0] font-sora">
-            
+        <div className="min-h-screen w-full flex bg-[#FFFAF0] font-sans">
             {/* LEFT SIDE: BRANDING */}
             <div className="hidden lg:flex w-1/2 relative flex-col justify-between p-16 overflow-hidden">
-                <motion.div
-                    initial={{ scale: 1.1, opacity: 0 }}
-                    animate={{ scale: 1.05, opacity: 1 }}
-                    transition={{ duration: 1.5 }}
-                    className="absolute inset-0 bg-cover bg-[center_top]"
-                    style={{ backgroundImage: `url(${justiceBg})` }}
-                />
+                <div className="absolute inset-0 bg-cover bg-[center_top]" style={{ backgroundImage: `url(${justiceBg})` }} />
                 <div className="absolute inset-0 bg-gradient-to-b from-[#0B1120]/90 via-[#0B1120]/80 to-[#0B1120]/95"></div>
-
                 <div className="relative z-10 mt-10">
-                    <motion.h1 
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        className="text-6xl font-bold text-white mb-8 leading-tight tracking-tight"
-                    >
-                        Bridging Citizens <br /> to 
-                        <span className="text-orange-500 ml-4">Justice</span>
-                    </motion.h1>
-
-                    <motion.div
-                        initial={{ x: -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.3 }}
-                        className="border-l-4 border-orange-500 pl-6"
-                    >
+                    <h1 className="text-6xl font-bold text-white mb-8 leading-tight tracking-tight">
+                        Bridging Citizens <br /> to <span className="text-orange-500 ml-4">Justice</span>
+                    </h1>
+                    <div className="border-l-4 border-orange-500 pl-6">
                         <p className="text-slate-200 text-lg max-w-md font-medium leading-relaxed">
-                            Secure. Transparent. Accessible legal support for citizens, police, and lawyers.
+                            Secure identity verification ensures that only authorized personnel handle sensitive legal data.
                         </p>
-                    </motion.div>
-                </div>
-
-                <div className="relative z-10 flex items-center gap-3 text-[10px] tracking-[0.3em] text-slate-500 uppercase font-semibold">
-                    <div className="h-px w-8 bg-slate-700"></div>
-                    © 2026 NyayaSahayak • Official Government Initiative
+                    </div>
                 </div>
             </div>
 
             {/* RIGHT SIDE: FORM */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-16">
-                <motion.div 
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="w-full max-w-md space-y-8"
-                >
-                    <div className="text-center lg:text-left">
-                        <h2 className="text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                            Create your account
-                        </h2>
-                        <p className="mt-4 text-slate-600 text-lg font-medium">
-                            Already have one? <Link to="/login" className="text-orange-600 font-semibold hover:text-orange-700 hover:underline decoration-2 underline-offset-4 transition-colors">Sign in here</Link>
-                        </p>
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-16 overflow-y-auto">
+                <div className="w-full max-w-md space-y-8">
+                    <div>
+                        <h2 className="text-4xl font-extrabold text-slate-900">Create Account</h2>
+                        <p className="mt-2 text-slate-600 font-medium">Join the verified legal network.</p>
                     </div>
 
-                    {/* ROLE SELECTOR */}
-                    <div className="grid grid-cols-3 gap-4">
-                        <RoleCard 
-                            icon={<User size={20} />} 
-                            label="Citizen" 
-                            selected={selectedRole === "citizen"} 
-                            onClick={() => setSelectedRole("citizen")}
-                        />
-                        <RoleCard 
-                            icon={<Shield size={20} />} 
-                            label="Police" 
-                            selected={selectedRole === "police"} 
-                            onClick={() => setSelectedRole("police")}
-                        />
-                        <RoleCard 
-                            icon={<Briefcase size={20} />} 
-                            label="Lawyer" 
-                            selected={selectedRole === "lawyer"} 
-                            onClick={() => setSelectedRole("lawyer")}
-                        />
+                    <div className="grid grid-cols-3 gap-3">
+                        <RoleCard icon={<User size={18} />} label="Citizen" selected={selectedRole === "citizen"} onClick={() => setSelectedRole("citizen")} />
+                        <RoleCard icon={<Shield size={18} />} label="Police" selected={selectedRole === "police"} onClick={() => setSelectedRole("police")} />
+                        <RoleCard icon={<Briefcase size={18} />} label="Lawyer" selected={selectedRole === "lawyer"} onClick={() => setSelectedRole("lawyer")} />
                     </div>
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                        {[
-                            { name: "fullName", label: "Full Name", type: "text", icon: <User />, placeholder: "John Doe" },
-                            { name: "email", label: "Email Address", type: "email", icon: <Mail />, placeholder: "name@email.com" },
-                            { name: "phone", label: "Phone Number (For SOS)", type: "tel", icon: <Phone />, placeholder: "+91 98765 43210" },
-                            { name: "password", label: "Password", type: "password", icon: <Lock />, placeholder: "••••••••" }
-                        ].map((field) => (
-                            <div key={field.name} className="group">
-                                <label className="text-xs font-semibold uppercase tracking-widest text-slate-600 mb-3 block">
-                                    {field.label}
-                                </label>
-                                <div className="relative">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors">
-                                        {React.cloneElement(field.icon, { size: 18 })}
+                    <form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-5">
+                        <InputField label="Full Name" name="fullName" icon={<User size={18} />} placeholder="John Doe" register={register} errors={errors} required />
+                        <InputField label="Email Address" name="email" type="email" icon={<Mail size={18} />} placeholder="name@email.com" register={register} errors={errors} required />
+                        <InputField label="Phone" name="phone" type="tel" icon={<Phone size={18} />} placeholder="+91 98765 43210" register={register} errors={errors} required />
+
+                        {selectedRole === 'police' && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <InputField label="Badge No." name="govId" icon={<Shield size={16} />} placeholder="MH-P-1234" register={register} errors={errors} required />
+                                    <InputField label="Station Code" name="stationCode" icon={<Building2 size={16} />} placeholder="STN-01" register={register} errors={errors} required />
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {selectedRole === 'lawyer' && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+                                <InputField label="Bar Enrollment No." name="govId" icon={<FileText size={16} />} placeholder="MAH/1234/2023" register={register} errors={errors} required />
+                            </motion.div>
+                        )}
+
+                        {selectedRole !== 'citizen' && (
+                            <div className="group">
+                                <label className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 block">Upload Official ID Card *</label>
+                                <div className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-colors bg-white cursor-pointer ${!idFile ? 'border-slate-300 hover:border-orange-500' : 'border-emerald-500 bg-emerald-50/20'}`}>
+                                    <input type="file" accept="image/*,.pdf" onChange={(e) => setIdFile(e.target.files[0])} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="p-3 bg-slate-100 rounded-full text-slate-400">
+                                            <Upload size={20} />
+                                        </div>
+                                        <p className="text-sm font-medium text-slate-600">
+                                            {idFile ? <span className="text-emerald-600 font-bold">{idFile.name}</span> : "Click to upload ID proof"}
+                                        </p>
                                     </div>
-                                    <input 
-                                        type={field.type}
-                                        placeholder={field.placeholder}
-                                        {...register(field.name, { required: true })}
-                                        className="w-full h-14 pl-12 pr-4 bg-white border-2 border-slate-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all placeholder:text-slate-400 font-medium text-slate-900"
-                                    />
                                 </div>
                             </div>
-                        ))}
+                        )}
 
-                        <motion.button 
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            type="submit" 
-                            disabled={isLoading}
-                            className="w-full h-14 bg-[#0B1120] hover:bg-black text-white font-bold text-lg rounded-2xl transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl shadow-slate-300"
-                        >
-                            {isLoading ? "Processing..." : "Create Account"}
-                            {!isLoading && <ArrowRight size={18} />}
-                        </motion.button>
+                        <InputField label="Password" name="password" type="password" icon={<Lock size={18} />} placeholder="••••••••" register={register} errors={errors} required />
+
+                        <button type="submit" disabled={isLoading} className="w-full h-14 bg-[#0B1120] hover:bg-black text-white font-bold text-lg rounded-2xl flex items-center justify-center gap-3 transition-all disabled:opacity-70">
+                            {isLoading ? <Loader2 className="animate-spin" size={18}/> : <>Create Account <ArrowRight size={18} /></>}
+                        </button>
                     </form>
-                </motion.div>
+                </div>
             </div>
         </div>
     );
 };
 
+// --- Helper Components ---
 const RoleCard = ({ icon, label, selected, onClick }) => (
-    <motion.div 
-        whileHover={{ y: -4 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onClick}
-        className={`relative cursor-pointer h-24 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 overflow-hidden group ${
-            selected 
-            ? "border-orange-500 bg-orange-50/50 shadow-md" 
-            : "border-slate-100 bg-white hover:border-orange-300 hover:shadow-md"
-        }`}
-    >
-        {selected && (
-            <motion.div layoutId="activeRole" className="absolute inset-0 border-2 border-orange-500 rounded-2xl" />
-        )}
-        <div className={`transition-colors ${selected ? "text-orange-600" : "text-slate-400 group-hover:text-slate-600"}`}>{icon}</div>
-        <span className={`text-xs font-bold uppercase tracking-tight ${selected ? "text-orange-700" : "text-slate-600"}`}>
-            {label}
-        </span>
-    </motion.div>
+    <div onClick={onClick} className={`cursor-pointer h-20 rounded-xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all ${selected ? "border-orange-500 bg-orange-50 text-orange-700" : "border-slate-200 bg-white text-slate-400 hover:border-slate-300"}`}>
+        {icon}
+        <span className="text-[10px] font-bold uppercase tracking-wide">{label}</span>
+    </div>
+);
+
+const InputField = ({ label, icon, register, name, required, errors, ...props }) => (
+    <div className="group">
+        <label className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 flex justify-between">
+            <span>{label} {required && <span className="text-red-500">*</span>}</span>
+            {errors?.[name] && <span className="text-red-500 normal-case flex items-center gap-1"><AlertCircle size={10} /> Required</span>}
+        </label>
+        <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                {icon}
+            </div>
+            <input 
+                {...register(name, { required })}
+                {...props}
+                className={`w-full h-12 pl-12 pr-4 bg-white border-2 rounded-xl outline-none transition-all font-medium text-sm ${errors?.[name] ? 'border-red-300 focus:border-red-500' : 'border-slate-200 focus:border-orange-500'}`}
+            />
+        </div>
+    </div>
 );
 
 export default SignupPage;
