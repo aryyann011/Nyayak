@@ -50,6 +50,7 @@ import ActiveCaseDetails from "./pages/lawyer/ActiveCaseDetail";
 import VerificationPending from "./pages/VerificationPending";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminUserDetails from "./pages/Admin/AdminUserDetails";
+import DraftingTool from "./pages/lawyer/DraftingTool";
 
 function App() {
   return (
@@ -118,6 +119,7 @@ function App() {
                 path="/lawyer/cases"
                 element={<LawyerDocket />}
               />
+              <Route path="/lawyer/tools" element={<DraftingTool />} />
             </Route>
 
             {/* ================= USER PROTECTED ROUTES ================= */}
