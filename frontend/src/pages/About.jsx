@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Scale, ShieldCheck, Users, Zap, Gavel, Cpu, Mail, ChevronDown, Github, Linkedin } from 'lucide-react';
+import { Scale, ShieldCheck, Users, Zap, Gavel, Cpu, Mail, ChevronDown, Github, Linkedin, Instagram, User } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
 const AboutPage = () => {
@@ -31,9 +31,12 @@ const AboutPage = () => {
   ];
 
   const team = [
-    { name: 'Arjun Mehta', role: 'Lead Architect', desc: 'Expert in Legal-Tech workflows and backend security.' },
-    { name: 'Sanya Iyer', role: 'Policy Head', desc: 'Former judicial clerk and legal policy analyst.' },
-    { name: 'Jyotish Kumar Jha', role: 'Full Stack Dev', desc: 'Specialist in secure government API integrations.' }
+    { name: 'Chirabrata Ghosal', linkedin: '#', github: '#', image : "", insta: '#' },
+    { name: 'Aryan Mishra', linkedin: 'https://www.linkedin.com/in/aryan-mishra-987b4a321/', image : '/Aryans.png', github: 'https://github.com/aryyann011', insta: '#' },
+    { name: 'Arnab Sarkar', linkedin: '#', image : '', github: '#', insta: '#' },
+    { name: 'Jyotish Kumar Jha', linkedin: '#', image : '',  github: '#', insta: '#' },
+    { name: 'Arpan Atha', linkedin: '#', image : '', github: '#', insta: '#' },
+    { name: 'Vikram Singh', linkedin: '#', image : '', github: '#', insta: '#' }
   ];
 
   const faqs = [
@@ -71,19 +74,45 @@ const AboutPage = () => {
         </p>
       </section>
 
-      {/* 2. STATS BAR */}
-      <section className="bg-[#1A1A1A] py-12">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
-          {stats.map((stat, index) => (
-            <div key={index} className="text-center">
-              <p className="text-3xl md:text-4xl font-bold text-white mb-1">{stat.value}</p>
-              <p className="text-gray-400 text-xs uppercase tracking-widest font-semibold">{stat.label}</p>
+      {/* 2. MEET THE TEAM (Moved up above Unified Ecosystem and Stats) */}
+      <section className="py-12 px-6 max-w-7xl mx-auto border-t border-orange-100/50">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-bold text-[#1A1A1A]">The Founding Board</h2>
+          <p className="text-gray-500 mt-2">The architects of modern legal infrastructure.</p>
+        </div>
+        
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-16">
+          {team.map((member, idx) => (
+            <div key={idx} className="group text-center">
+              <div className="w-44 h-44 bg-orange-100 rounded-full mx-auto mb-6 flex items-center justify-center text-[#E67E22] border-4 border-white shadow-md group-hover:bg-[#E67E22] group-hover:text-white transition-all duration-300 overflow-hidden">
+                {member.image ? (
+            <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+          ) : (
+            <User size={80} strokeWidth={1.5} /> /* This is the placeholder icon */
+          )}
+              </div>
+              <h3 className="text-xl font-bold text-[#1A1A1A] mb-4">{member.name}</h3>
+              
+              <div className="flex justify-center space-x-6 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                <a href={member.linkedin} className="text-gray-500 hover:text-blue-600 transition-colors">
+                  <Linkedin size={20} />
+                </a>
+                <a href={member.insta} className="text-gray-500 hover:text-pink-600 transition-colors">
+                  <Instagram size={20} />
+                </a>
+                <a href={member.github} className="text-gray-500 hover:text-black transition-colors">
+                  <Github size={20} />
+                </a>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* 3. THE 3 PILLARS */}
+      {/* 3. STATS BAR (The Black Card) */}
+      
+
+      {/* 4. THE 3 PILLARS (Unified Ecosystem) */}
       <section className="py-24 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-[#1A1A1A]">A Unified Ecosystem</h2>
@@ -103,9 +132,9 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* 4. OUR STORY (DARK CARD) */}
+      {/* 5. OUR STORY */}
       <section className="pb-24 px-6 max-w-7xl mx-auto">
-        <div className="bg-[#E67E22] rounded-[3rem] overflow-hidden flex flex-col md:row shadow-2xl min-h-[400px]">
+        <div className="bg-[#E67E22] rounded-[3rem] overflow-hidden flex flex-col md:flex-row shadow-2xl min-h-[400px]">
           <div className="md:w-1/2 p-12 md:p-20 flex flex-col justify-center text-white">
             <Scale size={40} className="mb-8 opacity-80" />
             <h2 className="text-3xl font-bold mb-6">Transparency by Design</h2>
@@ -129,31 +158,6 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* 5. MEET THE TEAM */}
-      <section className="py-24 px-6 max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-[#1A1A1A]">The Founding Board</h2>
-          <p className="text-gray-500 mt-2">The engineers and legal experts behind the platform.</p>
-        </div>
-        
-        <div className="grid md:grid-cols-3 gap-12">
-          {team.map((member, idx) => (
-            <div key={idx} className="group text-center">
-              <div className="w-40 h-40 bg-orange-100 rounded-full mx-auto mb-6 flex items-center justify-center text-[#E67E22] text-4xl font-bold border-4 border-white shadow-md group-hover:bg-[#E67E22] group-hover:text-white transition-all duration-300">
-                {member.name.charAt(0)}
-              </div>
-              <h3 className="text-xl font-bold text-[#1A1A1A]">{member.name}</h3>
-              <p className="text-[#E67E22] font-semibold text-xs uppercase mb-3 tracking-widest">{member.role}</p>
-              <p className="text-gray-600 text-sm px-4">{member.desc}</p>
-              <div className="flex justify-center space-x-4 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Linkedin size={18} className="text-gray-400 hover:text-blue-600 cursor-pointer" />
-                <Github size={18} className="text-gray-400 hover:text-black cursor-pointer" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* 6. FAQ SECTION */}
       <section className="py-24 bg-white border-t border-orange-100">
         <div className="max-w-3xl mx-auto px-6">
@@ -168,7 +172,7 @@ const AboutPage = () => {
                   <span className="font-bold text-[#1A1A1A]">{faq.q}</span>
                   <ChevronDown className={`text-[#E67E22] transition-transform duration-300 ${openFaq === idx ? 'rotate-180' : ''}`} size={20} />
                 </button>
-                <div className={`transition-all duration-300 ease-in-out overflow-hidden ${openFaq === idx ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className={`transition-all duration-300 ease-in-out overflow-hidden ${openFaq === idx ? 'max-h-40' : 'max-h-0'}`}>
                   <div className="p-6 bg-orange-50/10 text-gray-600 border-t border-orange-50 leading-relaxed">
                     {faq.a}
                   </div>
@@ -176,6 +180,16 @@ const AboutPage = () => {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+      <section className="bg-[#1A1A1A] py-12 mt-12">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
+          {stats.map((stat, index) => (
+            <div key={index} className="text-center">
+              <p className="text-3xl md:text-4xl font-bold text-white mb-1">{stat.value}</p>
+              <p className="text-gray-400 text-xs uppercase tracking-widest font-semibold">{stat.label}</p>
+            </div>
+          ))}
         </div>
       </section>
 

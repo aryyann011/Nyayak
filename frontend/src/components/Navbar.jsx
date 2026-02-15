@@ -22,14 +22,16 @@ const Navbar = () => {
       }`}>
         
         {/* Logo Section */}
-        <div className="flex items-center gap-2">
-          <div className={`p-1.5 rounded-full ${isDark ? 'bg-orange-500/20' : 'bg-orange-100'}`}>
-            <Scale className="w-5 h-5 text-orange-500" />
+        <Link to="/">
+          <div className="flex items-center gap-2">
+            <div className={`p-1.5 rounded-full ${isDark ? 'bg-orange-500/20' : 'bg-orange-100'}`}>
+              <Scale className="w-5 h-5 text-orange-500" />
+            </div>
+            <span className={`text-lg font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Nyaya<span className="text-orange-500">Sahayak</span>
+            </span>
           </div>
-          <span className={`text-lg font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Nyaya<span className="text-orange-500">Sahayak</span>
-          </span>
-        </div>
+        </Link>
 
         {/* Center Links (Desktop) */}
         <div className={`hidden md:flex items-center gap-8 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>

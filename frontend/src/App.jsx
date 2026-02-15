@@ -4,13 +4,13 @@ import { Routes, Route, BrowserRouter, Outlet } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/Login";
 import SignupPage from "./pages/SignupPage";
-import ContactPage from "./Contact-page";
+import ContactPage from "./pages/Contact-page";
 import AboutPage from "./pages/About";
 
 import { NotificationProvider } from "./context/NotificationContext";
 import Dashboard from "./pages/Dashboard";
 import SafetyMap from "./pages/SafetyMap";
-import Chat from "./pages/Chat";
+import Chat from "./pages/citizen/Chat";
 import Profile from "./pages/Profile";
 import PoliceLayout from "./layouts/PoliceLayout";
 import IncidentReports from "./pages/police/IncidentReports";

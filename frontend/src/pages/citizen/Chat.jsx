@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Upload, FileText, Loader2, X, Scale, ShieldCheck, Sparkles, Sun, Moon } from "lucide-react";
-import { useTheme } from "../context/themeContext";
+import { useTheme } from "../../context/themeContext";
 
 const Chat = () => {
   const { isDark, toggleTheme } = useTheme();
