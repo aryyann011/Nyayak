@@ -29,6 +29,16 @@ const Chat = () => {
   }, [messages]);
 
 
+  const handleFileSelect = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  setUploadedFile(file);
+  setFilePreview({
+    name: file.name,
+    size: file.size,
+  });
+};
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
