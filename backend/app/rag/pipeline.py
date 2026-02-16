@@ -41,7 +41,7 @@ class GoogleGenAIEmbeddings(Embeddings):
     def _embed(self, text: str):
         res = client.models.embed_content(
             model=self.model,
-            content=text,
+            contents=[text], 
             output_dimensionality=self.dimension
         )
         return res.embeddings[0].values
