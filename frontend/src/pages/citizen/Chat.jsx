@@ -47,9 +47,7 @@ const Chat = () => {
     setLoading(true);
 
     try {
-      const baseUrl = window.location.hostname === "localhost" 
-  ? "http://localhost:8000" 
-  : "https://nyayak-1.onrender.com";
+      const baseUrl = "https://nyayak-1.onrender.com" ;
       let response;
       if (uploadedFile) {
         const formData = new FormData();
