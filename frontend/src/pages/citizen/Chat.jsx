@@ -28,17 +28,7 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (file && (file.type === "application/pdf" || file.type === "text/plain")) {
-      setUploadedFile(file);
-      setFilePreview({
-        name: file.name,
-        size: (file.size / 1024).toFixed(2),
-        type: file.type === "application/pdf" ? "PDF" : "TXT",
-      });
-    }
-  };
+
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -57,18 +47,20 @@ const Chat = () => {
     setLoading(true);
 
     try {
-      const baseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+      const baseUrl = window.location.hostname === "localhost" 
+  ? "http://localhost:8000" 
+  : "https://nyayak-1.onrender.com";
       let response;
       if (uploadedFile) {
         const formData = new FormData();
         formData.append("query", inputText || "Analyze document");
         formData.append("file", uploadedFile);
-        response = await fetch(`${baseUrl}/chat`, {
+        response = await fetch(`${baseUrl}/ask-file`, {
           method: "POST",
           body: formData,
         });
       } else {
-        response = await fetch(`${baseUrl}/chat`, {
+        response = await fetch(`${baseUrl}/ask`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: inputText }),
