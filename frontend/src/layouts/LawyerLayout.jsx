@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useLocation } from "react-router-dom"; // 1. Import useLocation
 import Sidebar from "../components/Sidebar";
 import DashboardNavbar from "../components/DashboardNavbar";
 import { 
@@ -20,12 +21,18 @@ const LAWYER_LINKS = [
 
 const LawyerLayout = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  
+  // 2. Get current path
+  const location = useLocation();
+
+  // 3. Check if we are on the Drafting Tool page
+  const isFullWidthPage = location.pathname.includes('/lawyer/tools');
 
   return (
-    // 1. OUTER CONTAINER: Locks the screen height so the window doesn't scroll.
+    // 1. OUTER CONTAINER: Locks the screen height
     <div className="flex h-screen overflow-hidden bg-[#F8FAFC] dark:bg-[#0B1120] transition-colors duration-300">
       
-      {/* 2. SIDEBAR: Stays FIXED on the left because it is outside the scrollable area */}
+      {/* 2. SIDEBAR */}
       <Sidebar 
         isCollapsed={isSidebarCollapsed} 
         toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -33,13 +40,16 @@ const LawyerLayout = ({ children }) => {
         roleLabel="Advocate"    
       />
 
-      {/* 3. SCROLLABLE AREA: This right side handles the scrolling for Navbar + Content */}
+      {/* 3. SCROLLABLE AREA */}
       <div className="flex-1 flex flex-col h-full overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
         
-        {/* Navbar is part of the flow, so it scrolls up when you scroll down */}
         <DashboardNavbar toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
 
-        <main className="flex-1 p-6 md:p-8">
+        {/* 4. CONDITIONAL PADDING:
+           If we are on the drafting page, use 'p-0' (no padding).
+           Otherwise, use the standard 'p-6 md:p-8'.
+        */}
+        <main className={`flex-1 ${isFullWidthPage ? 'p-0' : 'p-6 md:p-8'}`}>
           {children}
         </main>
       </div>

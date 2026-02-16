@@ -85,7 +85,11 @@ const LawyerDashboard = () => {
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       
       {/* 1. Header Section - Sharper, Professional */}
-      <div className="relative overflow-hidden rounded-lg bg-white dark:from-slate-800 dark:to-slate-900 border border-orange-100 dark:border-slate-800 p-8 shadow-sm">
+      <div className="relative overflow-hidden rounded-lg 
+bg-white dark:bg-slate-800 
+border border-orange-100 dark:border-slate-800 
+p-8 shadow-sm">
+
         <div className="relative z-10">
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-serif-heading mb-2">
             The Chamber

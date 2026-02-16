@@ -29,7 +29,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className={`text-center text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed px-4 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}
+          className={`text-center text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed px-4 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}
         >
           Your government-backed digital legal companion. Draft documents, track FIRs, and access emergency services through a single, secure platform.
         </motion.p>
@@ -41,11 +41,11 @@ const HeroSection = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto px-6 mb-24"
         >
-          <Link to="/signup" className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 hover:bg-black text-white rounded-full font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
+          <Link to="/signup" className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 hover:bg-black text-white rounded-full font-bold text-lg transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 dark:bg-orange-600 dark:hover:bg-orange-700">
             Launch Platform
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
-          <Link to="/login" className={`w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border rounded-full font-bold text-lg transition-all hover:-translate-y-0.5 ${isDark ? 'border-white/20 text-white hover:bg-white/10' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}>
+          <Link to="/login" className={`w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border rounded-full font-bold text-lg transition-all hover:-translate-y-0.5 ${isDark ? 'border-white/10 text-white hover:bg-white/5' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}>
             View Services
           </Link>
         </motion.div>
@@ -137,25 +137,27 @@ const AIFeatureCard = ({ isDark }) => {
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.5 }}
-      className={`w-full max-w-4xl p-1 rounded-[2.5rem] bg-gradient-to-br shadow-2xl z-20 ${isDark ? 'from-white/10 to-white/0 shadow-orange-900/20' : 'from-white/60 to-white/20 shadow-orange-500/10'}`}
+      // ✨ CHANGED: Deeper shadow for Obsidian theme
+      className={`w-full max-w-4xl p-1 rounded-[2.5rem] bg-gradient-to-br shadow-2xl z-20 ${isDark ? 'from-white/10 to-white/0 shadow-black/50' : 'from-white/60 to-white/20 shadow-orange-500/10'}`}
     >
-      <div className={`rounded-[2.4rem] overflow-hidden border backdrop-blur-xl h-[450.1px] flex flex-col ${isDark ? 'bg-[#0F172A]/80 border-white/10' : 'bg-white/60 border-white/50'}`}>
+      {/* ✨ CHANGED: Background color to bg-[#030712]/80 */}
+      <div className={`rounded-[2.4rem] overflow-hidden border backdrop-blur-xl h-[450.1px] flex flex-col ${isDark ? 'bg-[#030712]/80 border-white/10' : 'bg-white/60 border-white/50'}`}>
         
         {/* Header */}
-        <div className={`p-5 border-b flex items-center justify-between ${isDark ? 'border-white/10 bg-white/5' : 'border-black/5 bg-white/40'}`}>
+        <div className={`p-5 border-b flex items-center justify-between ${isDark ? 'border-white/5 bg-white/5' : 'border-black/5 bg-white/40'}`}>
           <div className="flex items-center gap-3">
-             <div className={`p-1.5 rounded-lg ${isDark ? 'bg-orange-500/10' : 'bg-orange-100'}`}>
-               <Scale className={`w-5 h-5 ${isDark ? 'text-orange-400' : 'text-orange-600'}`} />
+             <div className={`p-1.5 rounded-lg ${isDark ? 'bg-orange-600' : 'bg-orange-100'}`}>
+               <Scale className={`w-5 h-5 ${isDark ? 'text-white' : 'text-orange-600'}`} />
              </div>
              <span className={`text-sm font-bold tracking-wide ${isDark ? 'text-white' : 'text-slate-800'}`}>LEGAL ASSISTANT</span>
           </div>
-          <div className={`text-xs font-medium px-3 py-1 rounded-full flex items-center gap-1.5 ${isDark ? 'bg-green-500/20 text-green-300' : 'bg-green-100 text-green-700'}`}>
+          <div className={`text-xs font-medium px-3 py-1 rounded-full flex items-center gap-1.5 ${isDark ? 'bg-green-500/10 text-green-400' : 'bg-green-100 text-green-700'}`}>
              <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
              Online
           </div>
         </div>
 
-        {/* Chat Body (NO SCROLLBAR, OVERFLOW HIDDEN) */}
+        {/* Chat Body */}
         <div className="flex-1 overflow-hidden p-6 space-y-6 flex flex-col justify-end">
           <AnimatePresence mode='wait'>
             {messages.map((msg, index) => (
@@ -169,7 +171,8 @@ const AIFeatureCard = ({ isDark }) => {
                 <div className={`max-w-[85%] p-5 rounded-2xl text-sm leading-relaxed shadow-sm ${
                   msg.type === 'user' 
                     ? 'bg-orange-600 text-white rounded-br-none font-medium' 
-                    : isDark ? 'bg-slate-800/80 text-slate-200 rounded-bl-none border border-white/5' : 'bg-white text-slate-700 rounded-bl-none border border-black/5'
+                    // ✨ CHANGED: Cleaner Obsidian message bubble
+                    : isDark ? 'bg-white/5 text-gray-200 rounded-bl-none border border-white/10' : 'bg-white text-slate-700 rounded-bl-none border border-black/5'
                 }`}>
                   {msg.text.split('\n').map((line, i) => (
                     <p key={i} className={i > 0 ? 'mt-2' : ''}>{line}</p>
@@ -182,7 +185,7 @@ const AIFeatureCard = ({ isDark }) => {
           {/* Typing Indicator */}
           {isTyping && (
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-               <div className={`p-4 rounded-2xl rounded-bl-none flex gap-1.5 ${isDark ? 'bg-slate-800/80' : 'bg-white border border-black/5'}`}>
+               <div className={`p-4 rounded-2xl rounded-bl-none flex gap-1.5 ${isDark ? 'bg-white/5' : 'bg-white border border-black/5'}`}>
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:-0.3s]"></span>
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:-0.15s]"></span>
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce"></span>
@@ -192,7 +195,7 @@ const AIFeatureCard = ({ isDark }) => {
         </div>
 
         {/* Input Area */}
-        <div className={`p-4 border-t ${isDark ? 'border-white/10 bg-white/5' : 'border-black/5 bg-white/40'}`}>
+        <div className={`p-4 border-t ${isDark ? 'border-white/5 bg-white/5' : 'border-black/5 bg-white/40'}`}>
           <div className="relative">
             <input
               type="text"
@@ -201,7 +204,8 @@ const AIFeatureCard = ({ isDark }) => {
               placeholder="Ask a legal question..."
               className={`w-full pl-5 pr-14 py-4 rounded-2xl outline-none transition-all font-medium cursor-default ${
                 isDark 
-                  ? 'bg-slate-900/50 text-white placeholder-slate-500 border border-white/10 focus:border-orange-500/50' 
+                  // ✨ CHANGED: Cleaner input field for Obsidian
+                  ? 'bg-black/30 text-white placeholder-gray-500 border border-white/10 focus:border-orange-500/50' 
                   : 'bg-white text-slate-800 placeholder-slate-400 border border-slate-200 focus:border-orange-500/50 shadow-sm'
               }`}
             />

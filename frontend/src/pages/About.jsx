@@ -38,7 +38,7 @@ const AboutPage = () => {
     { name: 'Arnab Sarkar', linkedin: '#', image : '', github: '#', insta: '#' },
     { name: 'Jyotish Kumar Jha', linkedin: '#', image : '',  github: '#', insta: '#' },
     { name: 'Arpan Atha', linkedin: '#', image : '', github: '#', insta: '#' },
-    { name: 'Vikram Singh', linkedin: '#', image : '', github: '#', insta: '#' }
+    { name: 'Danish Hossain', linkedin: '#', image : '', github: '#', insta: '#' }
   ];
 
   const faqs = [
