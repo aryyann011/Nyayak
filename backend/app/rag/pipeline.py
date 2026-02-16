@@ -1,282 +1,198 @@
 import os
 import re
-from typing import List
-
-try:
-    import fitz  # PyMuPDF
-except ImportError:
-    fitz = None
+from dotenv import load_dotenv
+from google import genai
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # ==========================================
-# DEVICE & PATH SETUP
+# LOAD ENV
 # ==========================================
-_device = None
+load_dotenv()
 
-def get_device():
-    global _device
-    if _device is None:
-        try:
-            import torch as _t
-            _device = "cuda" if _t.cuda.is_available() else "cpu"
-        except Exception:
-            _device = "cpu"
-    return _device
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("GEMINI_API_KEY not found in .env file")
 
+# ==========================================
+# GEMINI CLIENT (NEW SDK)
+# ==========================================
+client = genai.Client(api_key=api_key)
+
+# ==========================================
+# PATHS
+# ==========================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-INDEX_PATH = os.path.join(BASE_DIR, "..", "faiss_index")
+BASE_INDEX_PATH = os.path.join(BASE_DIR, "..", "..", "faiss_base")
+UPLOADED_INDEX_PATH = os.path.join(BASE_DIR, "..", "..", "faiss_uploaded")
 
-if not os.path.exists(INDEX_PATH):
-    INDEX_PATH = os.path.join(os.getcwd(), "faiss_index")
-
-
-# ==========================================
-# LAZY EMBEDDINGS & VECTORSTORE
-# ==========================================
-embeddings = None
-
-vectorstore = None
-
-def get_embeddings():
-    global embeddings
-    if embeddings is None:
-        from langchain_huggingface import HuggingFaceEmbeddings
-        embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
-        )
-    return embeddings
-
-def get_vectorstore():
-    global vectorstore
-    if vectorstore is None and os.path.exists(INDEX_PATH):
-        from langchain_community.vectorstores import FAISS
-        vectorstore = FAISS.load_local(
-            INDEX_PATH,
-            get_embeddings(),
-            allow_dangerous_deserialization=True
-        )
-    return vectorstore
-
+# Ensure upload folder exists
+os.makedirs(UPLOADED_INDEX_PATH, exist_ok=True)
 
 # ==========================================
-# LAZY LLM
+# EMBEDDINGS
 # ==========================================
-MODEL_NAME = os.environ.get("NYAYAK_MODEL", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
-
-tokenizer = None
-model = None
-
-def get_llm():
-    global tokenizer, model
-    if tokenizer is None or model is None:
-        from transformers import AutoTokenizer, AutoModelForCausalLM
-        import torch
-        model_name = os.environ.get("NYAYAK_MODEL", MODEL_NAME)
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            torch_dtype=torch.float16 if get_device() == "cuda" else torch.float32,
-            device_map="auto" if get_device() == "cuda" else None,
-        ).to(get_device())
-        model.eval()
-    return tokenizer, model
-
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
 
 # ==========================================
-# STATIC LEGAL KNOWLEDGE BASE
+# LOAD BASE INDEX
+# ==========================================
+base_store = None
+if os.path.exists(BASE_INDEX_PATH):
+    base_store = FAISS.load_local(
+        BASE_INDEX_PATH,
+        embeddings,
+        allow_dangerous_deserialization=True
+    )
+
+# ==========================================
+# STATIC FALLBACK TERMS
 # ==========================================
 LEGAL_TERMS = {
-    "fir": "FIR (First Information Report) is recorded under Section 154 CrPC for cognizable offenses.",
-    "bail": "Bail allows temporary release from custody under provisions of CrPC.",
-    "cognizable": "Police can arrest without warrant in cognizable offenses.",
-    "non-cognizable": "Police need court approval in non-cognizable offenses.",
-    "crpc": "CrPC 1973 governs criminal procedure in India.",
-    "ipc": "IPC 1860 defines criminal offenses in India.",
-    "tenant": "Tenant rights are protected under Rent Control Acts.",
-    "cybercrime": "Cybercrime is punishable under the IT Act 2000.",
-    "domestic violence": "Governed under the Protection of Women from Domestic Violence Act, 2005."
+    "fir": "FIR is recorded under Section 154 CrPC.",
+    "bail": "Bail allows temporary release under CrPC provisions.",
+    "ipc": "IPC 1860 defines criminal offences."
 }
 
+# ==========================================
+# BUILD UPLOADED INDEX
+# ==========================================
+def build_uploaded_index(text: str):
+    if not text.strip():
+        return
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200
+    )
+
+    chunks = splitter.split_text(text)
+
+    if not chunks:
+        return
+
+    store = FAISS.from_texts(chunks, embeddings)
+    store.save_local(UPLOADED_INDEX_PATH)
+
+
+def load_uploaded_index():
+    if os.path.exists(os.path.join(UPLOADED_INDEX_PATH, "index.faiss")):
+        return FAISS.load_local(
+            UPLOADED_INDEX_PATH,
+            embeddings,
+            allow_dangerous_deserialization=True
+        )
+    return None
+
 
 # ==========================================
-# HELPERS
+# RETRIEVE CONTEXT
 # ==========================================
-def extract_text(file_input: str) -> str:
-    if not file_input:
-        return ""
+def retrieve_context(query: str):
+    uploaded_store = load_uploaded_index()
 
-    if isinstance(file_input, str) and file_input.lower().endswith(".pdf"):
-        if not fitz or not os.path.exists(file_input):
-            return ""
+    # Priority 1: Uploaded PDF
+    if uploaded_store:
+        docs = uploaded_store.similarity_search(query, k=3)
+        return [d.page_content for d in docs], "uploaded"
 
-        text = ""
-        with fitz.open(file_input) as doc:
-            for page in doc:
-                text += page.get_text()
-        return text
+    # Priority 2: Base Knowledge
+    if base_store:
+        docs = base_store.similarity_search(query, k=3)
+        return [d.page_content for d in docs], "base"
 
-    return str(file_input)
-
-
-def get_legal_term_context(query: str) -> str:
-    query_lower = query.lower()
-    matches = [
-        definition for term, definition in LEGAL_TERMS.items()
-        if term in query_lower
-    ]
-    return " ".join(matches)
+    return [], "none"
 
 
-def retrieve_faiss_context(query: str, k: int = 3):
-    vs = get_vectorstore()
-    if not vs:
-        return [], []
+# ==========================================
+# MAIN FUNCTION
+# ==========================================
+def ask_question_with_doc(query: str, uploaded_text: str = None):
 
     try:
-        docs_with_scores = vs.similarity_search_with_score(query, k=k)
-        filtered_docs = [(doc, score) for doc, score in docs_with_scores if score < 1.2]
+        query_clean = query.strip().lower()
 
-        texts = [doc.page_content for doc, _ in filtered_docs]
-        sources = list(set(doc.metadata.get("source", "unknown") for doc, _ in filtered_docs))
+        # Greeting Guard
+        if re.match(r"^(hi+|hello+|hey+|namaste+)", query_clean):
+            return {
+                "answer": "Hello! I am NyaySetu AI. How can I assist you?",
+                "mode": "greeting",
+                "confidence": 100
+            }
 
-        return texts, sources
-    except Exception:
-        return [], []
+        # Build uploaded index safely
+        if uploaded_text and uploaded_text.strip():
+            build_uploaded_index(uploaded_text)
 
+        # Retrieve context
+        contexts, mode = retrieve_context(query)
 
-# ==========================================
-# MAIN RAG FUNCTION
-# ==========================================
-def ask_question_with_doc(query: str, uploaded_input: str = None):
+        # Static fallback
+        if not contexts:
+            fallback = ""
+            for term, definition in LEGAL_TERMS.items():
+                if term in query_clean:
+                    fallback += definition + " "
 
-    query_clean = query.strip().lower()
+            if fallback:
+                contexts = [fallback]
+                mode = "static"
 
-    # ==========================================
-    # 1️⃣ SMART GUARDRAILS
-    # ==========================================
+        context_text = "\n\n".join(contexts) if contexts else "No context found."
 
-    # Greeting variations (hi, hii, hellooo, heyyy)
-    if re.match(r"^(hi+|hello+|hey+|namaste+)", query_clean):
-        return {
-            "answer": "Hello! I am NyaySetu AI. How can I assist you with your legal question today?",
-            "sources": [],
-            "confidence": 100,
-            "disclaimer": ""
-        }
-
-    # Thanks variations
-    if re.search(r"(thank|thanks|shukriya)", query_clean):
-        return {
-            "answer": "You're very welcome! Feel free to ask if you have any more legal questions.",
-            "sources": [],
-            "confidence": 100,
-            "disclaimer": ""
-        }
-
-    # Very short meaningless queries
-    if len(query_clean.split()) <= 2:
-        return {
-            "answer": "Could you please describe your legal issue in more detail?",
-            "sources": [],
-            "confidence": 100,
-            "disclaimer": ""
-        }
-
-    # Normalize vague arrest queries
-    if "arrest" in query_clean and len(query_clean.split()) < 6:
-        query = "What should I do if I am arrested in India and what are my legal rights?"
-
-    # ==========================================
-    # 2️⃣ CONTEXT RETRIEVAL
-    # ==========================================
-    uploaded_text = extract_text(uploaded_input)
-    legal_term_context = get_legal_term_context(query)
-    faiss_texts, sources = retrieve_faiss_context(query)
-
-    context_parts = []
-
-    if uploaded_text.strip():
-        context_parts.append("[UPLOADED DOCUMENT]\n" + uploaded_text[:1200])
-
-    if legal_term_context:
-        context_parts.append("[LEGAL DEFINITIONS]\n" + legal_term_context)
-
-    if faiss_texts:
-        context_parts.append("[LEGAL PROCEDURES]\n" + "\n".join(text[:800] for text in faiss_texts))
-
-    context = "\n\n".join(context_parts) if context_parts else "No relevant legal context found."
-
-
-    # ==========================================
-    # 3️⃣ DYNAMIC LENGTH CONTROL
-    # ==========================================
-    word_count = len(query.split())
-
-    if word_count <= 8:
-        max_tokens = 120
-    elif word_count <= 20:
-        max_tokens = 250
-    else:
-        max_tokens = 400
-
-
-    # ==========================================
-    # 4️⃣ LLM PROMPTING
-    # ==========================================
-    system_prompt = """You are a professional Indian legal assistant.
+        system_prompt = """
+You are a professional Indian legal assistant.
 
 Guidelines:
-- Use clear and practical language.
-- Answer briefly if the question is simple.
-- Provide moderate explanation only if necessary.
-- Do not hallucinate laws.
-- If unsure, advise consulting a qualified lawyer.
-- Only mention specific legal sections if present in context.
+- Use the provided context as the primary source when it is relevant.
+- When the context is missing or incomplete, rely on your general knowledge of Indian law.
+- If you are still unsure, say that you are not certain and recommend consulting a qualified lawyer.
+- Be clear, practical and concise.
 """
 
-    prompt = f"<|system|>\n{system_prompt}</s>\n<|user|>\nContext:\n{context}\n\nQuestion: {query}</s>\n<|assistant|>\n"
+        prompt = f"""
+{system_prompt}
 
-    tok, mdl = get_llm()
-    import torch
-    inputs = tok(prompt, return_tensors="pt").to(get_device())
+Context:
+{context_text}
 
-    with torch.no_grad():
-        outputs = mdl.generate(
-            **inputs,
-            max_new_tokens=max_tokens,
-            temperature=0.2,
-            top_p=0.8,
-            repetition_penalty=1.2,
-            eos_token_id=tok.eos_token_id
+Question:
+{query}
+"""
+
+        # Gemini call (correct content format)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[
+                {
+                    "role": "user",
+                    "parts": [{"text": prompt}]
+                }
+            ]
         )
 
-    generated = outputs[0][inputs["input_ids"].shape[-1]:]
-    answer = tok.decode(generated, skip_special_tokens=True).strip()
+        answer = response.text.strip() if response.text else \
+            "I am unable to provide a clear legal answer based on the available information. Please consult a qualified legal professional."
+        answer = re.sub(r"\s+", " ", answer).strip()
 
-    # ==========================================
-    # 5️⃣ CLEAN OUTPUT
-    # ==========================================
-    answer = re.sub(r"\*\*.*?\*\*", "", answer)
-    answer = re.sub(r"\s+", " ", answer).strip()
+        confidence = 95 if mode == "uploaded" else \
+                     85 if mode == "base" else \
+                     70 if mode == "static" else 50
 
-    if not answer or len(answer) < 15:
-        answer = "I am unable to provide a clear legal answer based on the available context. Please consult a qualified legal professional."
+        return {
+            "answer": answer,
+            "mode": mode,
+            "confidence": confidence,
+            "disclaimer": "AI-generated informational response. Not legal advice."
+        }
 
-
-    # ==========================================
-    # 6️⃣ CONFIDENCE SCORE
-    # ==========================================
-    if faiss_texts:
-        confidence = 90
-    elif legal_term_context:
-        confidence = 80
-    else:
-        confidence = 65
-
-
-    return {
-        "answer": answer,
-        "sources": sources,
-        "disclaimer": "This is an AI-generated informational response based on Indian law. It is not legal advice.",
-        "confidence": confidence
-    }
-
+    except Exception as e:
+        print("FULL ERROR:", str(e))
+        return {
+            "answer": f"Internal error: {str(e)}",
+            "mode": "error",
+            "confidence": 0
+        }
