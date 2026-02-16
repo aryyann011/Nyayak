@@ -11,7 +11,7 @@ pydantic>=2.5.0,<3.0
 
 # LANGUAGE MODEL & NLP
 transformers>=4.40.0,<4.46
-torch>=2.2.0,<2.4
+torch>=2.9,<2.11
 sentence-transformers>=2.7.0,<3.0
 # Only one entry for FAISS (stable Linux version)
 faiss-cpu==1.9.0.post1
