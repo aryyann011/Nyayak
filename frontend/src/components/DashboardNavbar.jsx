@@ -4,6 +4,7 @@ import { useTheme } from "../context/themeContext";
 import { useAuth } from "../context/Authcontext";
 import { useNotification } from "../context/NotificationContext"; // Import Context
 import NotificationCenter from "./NotificationCenter"; // Import New Component
+import { Link } from "react-router-dom";
 
 const DashboardNavbar = ({ toggleSidebar, onEmergencyClick }) => { 
   const { isDark, toggleTheme } = useTheme();
@@ -41,7 +42,7 @@ const DashboardNavbar = ({ toggleSidebar, onEmergencyClick }) => {
              <Menu size={24} />
            </button>
         )}
-        <div className="relative w-96 hidden md:block">
+        {/* <div className="relative w-96 hidden md:block">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
@@ -51,7 +52,7 @@ const DashboardNavbar = ({ toggleSidebar, onEmergencyClick }) => {
               dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-900 dark:focus:border-slate-700
             "
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Right: Actions */}
@@ -94,14 +95,18 @@ const DashboardNavbar = ({ toggleSidebar, onEmergencyClick }) => {
         {/* DYNAMIC ROLE BUTTONS */}
         {role === 'lawyer' ? (
           <div className="hidden sm:flex items-center gap-3">
-             <button className="flex items-center gap-2 px-4 py-2.5 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 text-sm font-bold rounded-xl hover:bg-orange-100 transition-all">
+             <Link to="/lawyer/schedule">
+              <button className="flex cursor-pointer items-center gap-2 px-4 py-2.5 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 text-sm font-bold rounded-xl hover:bg-orange-100 transition-all">
                 <Calendar className="w-4 h-4" />
                 <span>Schedule</span>
              </button>
-             <button className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold rounded-xl hover:opacity-90 transition-all shadow-lg">
+             </Link>
+             <Link to="/lawyer/requests">
+              <button className="flex cursor-pointer items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold rounded-xl hover:opacity-90 transition-all shadow-lg">
                 <Briefcase className="w-4 h-4" />
                 <span>New Case</span>
              </button>
+             </Link>
           </div>
         ) : role === 'police' ? (
            <div className="hidden sm:flex items-center gap-3">

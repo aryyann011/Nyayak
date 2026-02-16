@@ -7,8 +7,8 @@ const ProfileLayout = () => {
   const menuItems = [
     { icon: User, label: "Edit Profile", path: "/profile" },
     { icon: Shield, label: "Security", path: "/profile/security" },
-    { icon: Key, label: "Password", path: "/profile/password" },
-    { icon: Bell, label: "Notifications", path: "/profile/notifications" },
+    // { icon: Key, label: "Password", path: "/profile/password" },
+    // { icon: Bell, label: "Notifications", path: "/profile/notifications" },
   ];
 
   return (

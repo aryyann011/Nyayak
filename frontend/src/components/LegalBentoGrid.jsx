@@ -23,13 +23,13 @@ const DocumentMarquee = ({ isDark }) => (
         key={idx}
         className={`relative w-40 overflow-hidden rounded-xl border p-3 transition-colors ${
             isDark 
-            ? "border-slate-700 bg-slate-800" 
+            ? "border-white/10 bg-white/5" // ✨ Cleaner Obsidian look
             : "border-orange-200 bg-orange-50"
         }`}
       >
         <div className="flex items-center gap-2">
-          <FileText className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-orange-500'}`} />
-          <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{f.name}</span>
+          <FileText className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-orange-500'}`} />
+          <span className={`text-xs font-semibold ${isDark ? 'text-gray-300' : 'text-slate-700'}`}>{f.name}</span>
         </div>
       </div>
     ))}
@@ -48,7 +48,7 @@ const NotificationList = ({ isDark }) => (
                 key={i}
                 className={`flex items-center gap-3 p-3 rounded-xl border shadow-sm transition-all hover:scale-[1.02] ${
                     isDark 
-                    ? "bg-slate-800 border-slate-700 text-slate-200" 
+                    ? "bg-white/5 border-white/10 text-gray-200" // ✨ Cleaner Obsidian look
                     : "bg-white border-slate-200 text-slate-800"
                 }`}
             >
@@ -66,15 +66,16 @@ const NotificationList = ({ isDark }) => (
 // 3. Calendar
 const CalendarGraphic = ({ isDark }) => (
     <div className={`absolute top-10 right-8 p-4 rounded-xl border shadow-sm rotate-3 transition-transform duration-500 group-hover:rotate-0 ${
-        isDark ? "bg-slate-800 border-slate-700" : "bg-white border-orange-100"
+        isDark ? "bg-white/5 border-white/10" : "bg-white border-orange-100" // ✨ Cleaner Obsidian look
     }`}>
         <div className="text-center mb-2">
             <span className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>August 2026</span>
         </div>
         <div className="grid grid-cols-7 gap-1 text-[10px]">
             {['S','M','T','W','T','F','S'].map(d => <span key={d} className="opacity-50">{d}</span>)}
+            {/* Simple calendar grid generation */}
             {[...Array(14)].map((_, i) => (
-                <span key={i} className={`flex items-center justify-center h-5 w-5 rounded-full ${i === 11 ? 'bg-orange-500 text-white font-bold' : 'opacity-80'}`}>
+                <span key={i} className={`flex items-center justify-center h-5 w-5 rounded-full ${i === 11 ? 'bg-orange-600 text-white font-bold' : 'opacity-80'}`}>
                     {i + 1}
                 </span>
             ))}
@@ -85,9 +86,9 @@ const CalendarGraphic = ({ isDark }) => (
 // 4. Network
 const NetworkGraphic = ({ isDark }) => (
     <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
-        <div className={`absolute w-32 h-32 rounded-full border border-dashed animate-[spin_10s_linear_infinite] ${isDark ? 'border-slate-500' : 'border-orange-300'}`} />
-        <div className={`absolute w-48 h-48 rounded-full border border-dotted animate-[spin_15s_linear_infinite_reverse] ${isDark ? 'border-slate-600' : 'border-orange-200'}`} />
-        <div className="relative z-10 p-3 bg-red-500 rounded-full shadow-lg shadow-red-500/30 animate-pulse">
+        <div className={`absolute w-32 h-32 rounded-full border border-dashed animate-[spin_10s_linear_infinite] ${isDark ? 'border-gray-600' : 'border-orange-300'}`} />
+        <div className={`absolute w-48 h-48 rounded-full border border-dotted animate-[spin_15s_linear_infinite_reverse] ${isDark ? 'border-gray-700' : 'border-orange-200'}`} />
+        <div className="relative z-10 p-3 bg-red-600 rounded-full shadow-lg shadow-red-600/30 animate-pulse">
             <Siren className="w-5 h-5 text-white" />
         </div>
     </div>
@@ -138,26 +139,27 @@ export function LegalBentoGrid() {
   ];
 
   return (
-    <section className={`py-24 px-6 transition-colors duration-500 ${isDark ? 'bg-[#0B1120]' : 'bg-[#FFF8F0]'}`}>
+    // ✨ CHANGED: bg-[#0B1120] -> bg-[#030712]
+    <section className={`py-24 px-6 transition-colors duration-500 ${isDark ? 'bg-[#030712]' : 'bg-[#FFF8F0]'}`}>
         <div className="max-w-7xl mx-auto">
-             <div className="mb-16 text-center">
-                <h2 className={`text-3xl md:text-5xl font-serif-heading font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <div className="mb-16 text-center">
+                 <h2 className={`text-3xl md:text-5xl font-serif-heading font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     Everything you need for Justice.
-                </h2>
-                <p className={`text-lg max-w-2xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                 </h2>
+                 <p className={`text-lg max-w-2xl mx-auto ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
                     A complete suite of tools designed to modernize the Indian legal experience.
-                </p>
-             </div>
-             
-             <BentoGrid>
-                {features.map((feature, idx) => (
+                 </p>
+              </div>
+              
+              <BentoGrid>
+                 {features.map((feature, idx) => (
                     // CRITICAL: We pass isDark prop here to FORCE the card theme
-                   <Link key={idx} to="/login" className="contents">
-                        <BentoCard {...feature} isDark={isDark} />
+                    <Link key={idx} to="/login" className="contents">
+                         <BentoCard {...feature} isDark={isDark} />
                     </Link>
                     
-                ))}
-             </BentoGrid>
+                 ))}
+              </BentoGrid>
         </div>
     </section>
   );

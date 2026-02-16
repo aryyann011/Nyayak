@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { 
   Search, Layers, Navigation, ShieldAlert, 
-  MapPin, AlertTriangle, CheckCircle2, Loader2 
+  Loader2 
 } from "lucide-react";
 import { useTheme } from "../context/themeContext";
 
@@ -22,7 +22,7 @@ const icons = {
   station: createIcon('blue'),
   incident: createIcon('red'),
   safe: createIcon('green'),
-  search: createIcon('violet') // New icon for search results
+  search: createIcon('violet') 
 };
 
 // --- MOCK DATA ---
@@ -39,12 +39,10 @@ const SafetyMap = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   
-  // This state controls where the map looks. 
-  // Changing this triggers the "FlyTo" effect.
   const [viewState, setViewState] = useState({
-    center: [28.6139, 77.2090], // Default: New Delhi
+    center: [28.6139, 77.2090], 
     zoom: 13,
-    marker: null // Stores the search result pin
+    marker: null 
   });
 
   const [activeLayers, setActiveLayers] = useState({
@@ -57,14 +55,13 @@ const SafetyMap = () => {
     ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
     : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 
-  // --- SEARCH LOGIC (Nominatim API) ---
+  // --- SEARCH LOGIC ---
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
     try {
-      // Free OpenStreetMap Geocoding API
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${searchQuery}`
       );
@@ -74,10 +71,9 @@ const SafetyMap = () => {
         const { lat, lon, display_name } = data[0];
         const newCoords = [parseFloat(lat), parseFloat(lon)];
 
-        // Update map view and drop a violet pin
         setViewState({
           center: newCoords,
-          zoom: 15, // Zoom in closer for search results
+          zoom: 15, 
           marker: { lat: newCoords[0], lng: newCoords[1], title: display_name }
         });
       } else {
@@ -90,26 +86,24 @@ const SafetyMap = () => {
     }
   };
 
-  // --- "RECENTER" BUTTON LOGIC ---
   const handleRecenter = () => {
-    // In a real app, use navigator.geolocation here
     setViewState(prev => ({ ...prev, center: [28.6139, 77.2090], zoom: 13 }));
   };
 
   const toggleLayer = (key) => setActiveLayers(prev => ({ ...prev, [key]: !prev[key] }));
 
   return (
-    <div className="h-[calc(100vh-8rem)] relative font-sans rounded-[24px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm group">
+    // PARENT CONTAINER: Relative Z-0 ensures everything here stays under the Sidebar (which is likely Z-50)
+    <div className="h-[calc(100vh-8rem)] relative z-0 font-sans rounded-[24px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm group">
       
       <MapContainer 
         center={viewState.center} 
         zoom={viewState.zoom} 
-        style={{ height: "100%", width: "100%", background: isDark ? '#111827' : '#F3F4F6' }}
+        style={{ height: "100%", width: "100%", background: isDark ? '#111827' : '#F3F4F6', zIndex: 0 }}
         zoomControl={false}
       >
         <TileLayer attribution='&copy; OpenStreetMap' url={mapStyle} />
 
-        {/* Static Data Pins */}
         {activeLayers.stations && SAFETY_DATA.filter(d => d.type === 'station').map(item => (
           <Pin key={item.id} item={item} icon={icons.station} />
         ))}
@@ -120,7 +114,6 @@ const SafetyMap = () => {
           <Pin key={item.id} item={item} icon={icons.safe} />
         ))}
 
-        {/* Dynamic Search Result Pin */}
         {viewState.marker && (
           <Marker position={[viewState.marker.lat, viewState.marker.lng]} icon={icons.search}>
             <Popup>
@@ -132,11 +125,13 @@ const SafetyMap = () => {
           </Marker>
         )}
 
-        {/* THE INVISIBLE CONTROLLER: Handles FlyTo animations and resizing */}
         <MapController viewState={viewState} isDark={isDark} />
       </MapContainer>
 
-      {/* --- FLOATING SEARCH BAR (Now Functional) --- */}
+      {/* --- CONTROLS --- */}
+      {/* We use z-[400] to be ABOVE the map tiles but contained within the parent z-0 */}
+      
+      {/* SEARCH BAR */}
       <div className="absolute top-4 left-4 z-[400] w-80">
         <form 
           onSubmit={handleSearch}
@@ -160,8 +155,8 @@ const SafetyMap = () => {
         </form>
       </div>
 
-      {/* Layers Control */}
-      <div className="absolute top-20 left-4 z-[400] w-64 hidden md:block">
+      {/* LAYERS CONTROL - REMOVED 'hidden md:block' so it never disappears */}
+      <div className="absolute top-20 left-4 z-[400] w-64">
         <div className="bg-white/90 dark:bg-[#1F2937]/90 backdrop-blur-md p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-2">
           <h3 className="text-xs font-bold uppercase text-slate-500 mb-3 flex items-center gap-2">
             <Layers className="w-3 h-3" /> Data Layers
@@ -173,7 +168,7 @@ const SafetyMap = () => {
         </div>
       </div>
 
-      {/* Recenter & SOS */}
+      {/* SOS BUTTONS */}
       <div className="absolute bottom-6 right-6 z-[400] flex flex-col gap-3">
         <button 
           onClick={handleRecenter}
@@ -190,28 +185,22 @@ const SafetyMap = () => {
   );
 };
 
-// --- CONTROLLER COMPONENT (The Magic Glue) ---
-// This sits INSIDE the MapContainer to access the 'map' instance
+// --- HELPERS ---
 const MapController = ({ viewState, isDark }) => {
   const map = useMap();
 
-  // 1. Handle Flying to new coordinates
   useEffect(() => {
-    map.flyTo(viewState.center, viewState.zoom, {
-      animate: true,
-      duration: 1.5 // Seconds
-    });
+    map.flyTo(viewState.center, viewState.zoom, { animate: true, duration: 1.5 });
   }, [viewState, map]);
 
-  // 2. Handle Resize/Theme updates
   useEffect(() => {
-    map.invalidateSize();
+    // Small delay ensures map resizes correctly after layout shifts
+    setTimeout(() => map.invalidateSize(), 400); 
   }, [isDark, map]);
 
   return null;
 };
 
-// --- SUB-COMPONENTS ---
 const Pin = ({ item, icon }) => (
   <Marker position={[item.lat, item.lng]} icon={icon}>
     <Popup className="custom-popup">

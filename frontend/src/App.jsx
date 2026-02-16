@@ -51,6 +51,7 @@ import VerificationPending from "./pages/VerificationPending";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminUserDetails from "./pages/Admin/AdminUserDetails";
 import DraftingTool from "./pages/lawyer/DraftingTool";
+import HowItWorks from "./pages/HowItWorks";
 
 function App() {
   return (
@@ -62,6 +63,7 @@ function App() {
 
             {/* ================= PUBLIC ROUTES ================= */}
             <Route path="/" element={<LandingPage />} />
+            <Route path='/How-it-works' element={<HowItWorks/>} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/contact" element={<ContactPage />} />
