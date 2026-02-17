@@ -124,6 +124,8 @@ if (updateError) {
     );
   };
 
+  
+
   /* ================= SEND NOTIFICATION ================= */
   const sendNotification = async (
     targetUserId,
@@ -150,6 +152,9 @@ if (updateError) {
     }
   };
 
+  const triggerToast = (title, message, type = "info") => {
+    setNotification({ title, message, type });
+  };
   return (
     <NotificationContext.Provider
       value={{
@@ -157,6 +162,7 @@ if (updateError) {
         markAllAsRead,
         fetchHistory: fetchHistoryAndSync,
         sendNotification,
+        triggerToast
       }}
     >
       {children}

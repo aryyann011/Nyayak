@@ -8,7 +8,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [type, setType] = useState("police"); 
-  const [topic, setTopic] = useState(""); // <--- NEW STATE FOR TOPIC
+  const [topic, setTopic] = useState(""); 
   const [description, setDescription] = useState(""); 
   const [isSending, setIsSending] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
@@ -16,18 +16,39 @@ const EmergencyModal = ({ isOpen, onClose }) => {
   const [location, setLocation] = useState({ 
     lat: null, 
     lng: null, 
-    display: "Waiting for location..." 
+    display: "Initializing..." 
   });
 
   const navigate = useNavigate();
 
-  const detectLocation = () => {
+  // --- ROBUST LOCATION DETECTION ---
+  const detectLocation = async () => {
     setIsLocating(true);
-    setLocation(prev => ({ ...prev, display: "Detecting GPS signal..." }));
+    setLocation(prev => ({ ...prev, display: "Triangulating signal..." }));
 
-    if (navigator.geolocation) {
+    // 1. Helper to fetch via IP (Backup Method)
+    const fetchIpLocation = async () => {
+        try {
+            const res = await fetch('https://ipapi.co/json/');
+            const data = await res.json();
+            if (data.latitude && data.longitude) {
+                return { 
+                    lat: data.latitude, 
+                    lng: data.longitude, 
+                    display: `${data.city}, ${data.region} (Approx via IP)` 
+                };
+            }
+        } catch (e) {
+            console.error("IP Location failed:", e);
+        }
+        return null;
+    };
+
+    // 2. Try Browser GPS first
+    if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          // SUCCESS: GPS Locked
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           const acc = position.coords.accuracy;
@@ -39,16 +60,30 @@ const EmergencyModal = ({ isOpen, onClose }) => {
           });
           setIsLocating(false);
         },
-        (error) => {
-          console.error("GPS Error:", error);
-          setLocation({ lat: null, lng: null, display: "Location access denied. Using fallback." });
+        async (error) => {
+          // ERROR: GPS Failed/Blocked -> Try IP Fallback
+          console.warn("GPS failed, switching to IP fallback...", error);
+          const ipLoc = await fetchIpLocation();
+          
+          if (ipLoc) {
+             setLocation(ipLoc);
+          } else {
+             // FINAL FALLBACK: Default HQ
+             setLocation({ lat: 28.6139, lng: 77.2090, display: "GPS Failed. Using HQ Default." });
+          }
           setIsLocating(false);
         },
-        { enableHighAccuracy: true, timeout: 10000 }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 } // Reduced timeout to 5s
       );
     } else {
-      setLocation({ lat: null, lng: null, display: "Geolocation not supported." });
-      setIsLocating(false);
+       // NO GPS SUPPORT -> Try IP Fallback immediately
+       const ipLoc = await fetchIpLocation();
+       if (ipLoc) {
+           setLocation(ipLoc);
+       } else {
+           setLocation({ lat: 28.6139, lng: 77.2090, display: "Device not supported. Using HQ." });
+       }
+       setIsLocating(false);
     }
   };
 
@@ -56,9 +91,9 @@ const EmergencyModal = ({ isOpen, onClose }) => {
     if (isOpen) {
       setStep(1);
       setIsSending(false);
-      setTopic(""); // Reset topic
+      setTopic(""); 
       setDescription("");
-      detectLocation();
+      detectLocation(); // Auto-start detection
     }
   }, [isOpen]);
 
@@ -66,15 +101,11 @@ const EmergencyModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async () => {
     if (!location.lat) {
-      alert("Waiting for location... Please click 'Locate Me' if it takes too long.");
+      alert("Location is required. Please wait for detection or click 'Refetch'.");
       return;
     }
     
-    // Validation: Ensure topic is filled if it's a police emergency
-    if (type === 'police' && !topic.trim()) {
-      alert("Please specify the topic (e.g., Theft, Assault).");
-      return;
-    }
+    const finalTopic = topic.trim() || (type === 'police' ? 'General Police Alert' : 'Medical Emergency');
 
     setIsSending(true);
 
@@ -85,7 +116,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
           {
             user_id: user?.id,
             type: type === 'police' ? 'Police Intervention' : 'Medical Assistance',
-            topic: topic || (type === 'police' ? 'General Police Alert' : 'Medical Emergency'), // <--- SAVE TOPIC
+            topic: finalTopic, 
             status: 'active',
             priority: 'critical',
             location_lat: location.lat,
@@ -99,7 +130,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
 
       if (error) throw error;
 
-      setStep(2);
+      setStep(2); 
       setIsSending(false);
 
       setTimeout(() => {
@@ -122,10 +153,11 @@ const EmergencyModal = ({ isOpen, onClose }) => {
         
         <div className="h-1.5 w-full bg-red-600"></div>
         
+        {/* HEADER */}
         <div className="px-6 py-5 border-b flex justify-between items-start border-slate-100 dark:border-slate-700">
           <div className="flex items-start gap-4">
              <div className="p-3 rounded-md shrink-0 bg-red-50 border border-red-100 dark:bg-red-900/20 dark:border-red-900/30">
-               <Siren className="w-6 h-6 text-red-700 dark:text-red-500" />
+               <Siren className="w-6 h-6 text-red-700 dark:text-red-500 animate-pulse" />
              </div>
              <div>
                <h2 className="text-xl font-bold leading-none text-slate-900 dark:text-white">Emergency Protocol</h2>
@@ -141,7 +173,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
           {step === 1 ? (
             <div className="space-y-6">
                
-               {/* Location Section */}
+               {/* LOCATION DISPLAY */}
                <div className="space-y-2">
                  <div className="flex justify-between items-center">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Current Location</label>
@@ -151,7 +183,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
                       className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
                     >
                       {isLocating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Crosshair className="w-3 h-3" />}
-                      {isLocating ? "Locating..." : "Refetch Location"}
+                      {isLocating ? "Locating..." : "Refetch"}
                     </button>
                  </div>
                  
@@ -165,7 +197,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
                  </div>
                </div>
 
-               {/* Type Buttons */}
+               {/* TYPE SELECTOR */}
                <div className="space-y-2">
                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Nature of Emergency</label>
                  <div className="grid grid-cols-2 gap-3">
@@ -192,10 +224,10 @@ const EmergencyModal = ({ isOpen, onClose }) => {
                  </div>
                </div>
 
-               {/* --- NEW TOPIC INPUT SECTION --- */}
+               {/* TOPIC INPUT */}
                <div className="space-y-2">
                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Specific Topic <span className="text-red-500">*</span>
+                   Specific Topic <span className="text-red-500">*</span>
                  </label>
                  <div className="relative">
                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -214,7 +246,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
                  </div>
                </div>
 
-               {/* Brief Input */}
+               {/* DESCRIPTION INPUT */}
                <div className="space-y-2">
                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Situation Brief (Optional)</label>
                  <input 
@@ -229,7 +261,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
                  />
                </div>
 
-               {/* Submit Button */}
+               {/* SUBMIT BUTTON */}
                <div className="pt-2">
                  <button 
                    onClick={handleSubmit}
@@ -242,7 +274,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
 
             </div>
           ) : (
-            /* Success State */
+            /* SUCCESS STATE */
             <div className="py-8 flex flex-col items-center justify-center text-center">
                <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 border bg-green-50 border-green-100 dark:bg-green-900/20 dark:border-green-900/30">
                   <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />

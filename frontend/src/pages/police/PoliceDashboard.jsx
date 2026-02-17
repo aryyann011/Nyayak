@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, useMapEvents, Circle, Rectangle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+// import { toast, ToastContainer } from "react-toastify"; // REMOVED as requested
+// import "react-toastify/dist/ReactToastify.css";         // REMOVED as requested
 import { supabase } from "../../lib/supabase"; 
 import { Navigation, MapPin, CheckCircle, ArrowLeft, Phone, User, Siren, AlertTriangle, Zap } from "lucide-react";
 
@@ -37,105 +37,18 @@ const MapUpdater = ({ center, zoom }) => {
   return null;
 };
 
-// Custom Heatmap Layer Component using Canvas
+// --- HEATMAP COMPONENT ---
 const HeatmapDisplay = ({ locations, zoom }) => {
   const map = useMap();
-  const canvasRef = useRef(null);
   const overlayRef = useRef(null);
-  const [hoveredZones, setHoveredZones] = useState([]);
 
   useEffect(() => {
     if (!map || !locations || locations.length === 0) return;
 
-    // Remove old overlay if exists
+    // Cleanup old layers if any
     if (overlayRef.current) {
       map.removeLayer(overlayRef.current);
     }
-
-    // Create a custom overlay using simple visual indicators
-    const bounds = map.getBounds();
-    const padding = 0.01;
-    const visibleMapBounds = [
-      [bounds.getSouth() - padding, bounds.getWest() - padding],
-      [bounds.getNorth() + padding, bounds.getEast() + padding],
-    ];
-
-    // Group locations by proximity to create heatmap intensity
-    // Grid size: ~55m at zoom 15, ~111m at zoom 14, ~222m at zoom 13 (street/neighborhood level)
-    const gridSize = 0.0005 * Math.pow(2, 15 - zoom);
-    const grid = {};
-
-    locations.forEach((loc) => {
-      const key = `${Math.floor(loc.latitude / gridSize)}-${Math.floor(loc.longitude / gridSize)}`;
-      if (!grid[key]) {
-        grid[key] = { lat: loc.latitude, lng: loc.longitude, dangerous: 0, safe: 0, locs: [] };
-      }
-      if (loc.type === 'dangerous') {
-        grid[key].dangerous += 1;
-      } else {
-        grid[key].safe += 1;
-      }
-      grid[key].locs.push(loc);
-    });
-
-    // Create rectangles for heatmap visualization
-    const gridLayers = Object.values(grid).map((cell) => {
-      const total = cell.dangerous + cell.safe;
-      const dangerRatio = cell.dangerous / total;
-      
-      // Determine color based on danger ratio
-      let color, opacity, weight;
-      if (dangerRatio > 0.7) {
-        color = '#dc2626'; // Red - Dangerous
-        opacity = 0.3 + (dangerRatio * 0.4);
-        weight = 2;
-      } else if (dangerRatio > 0.4) {
-        color = '#f59e0b'; // Orange - Mixed
-        opacity = 0.2 + (dangerRatio * 0.3);
-        weight = 1;
-      } else if (dangerRatio > 0) {
-        color = '#eab308'; // Yellow - Mostly Safe
-        opacity = 0.15;
-        weight = 1;
-      } else {
-        color = '#22c55e'; // Green - Safe
-        opacity = 0.25;
-        weight = 1;
-      }
-
-      const bounds = [
-        [cell.lat - gridSize / 2, cell.lng - gridSize / 2],
-        [cell.lat + gridSize / 2, cell.lng + gridSize / 2],
-      ];
-
-      return (
-        <Rectangle
-          key={`${cell.lat}-${cell.lng}`}
-          bounds={bounds}
-          pathOptions={{
-            color: color,
-            weight: weight,
-            opacity: 0.2,
-            fillColor: color,
-            fillOpacity: opacity,
-          }}
-          popup={`<strong>${cell.dangerous} Dangerous, ${cell.safe} Safe</strong>`}
-        >
-          <Popup>
-            <div className="text-sm">
-              <strong>Zone Heat</strong>
-              <p>Dangerous: {cell.dangerous}</p>
-              <p>Safe: {cell.safe}</p>
-              <p>Ratio: {(dangerRatio * 100).toFixed(0)}% Dangerous</p>
-            </div>
-          </Popup>
-        </Rectangle>
-      );
-    });
-
-    // Group and render all heatmap rectangles
-    const heatGroup = L.featureGroup();
-    gridLayers.forEach(() => {}); // Just ensure they're rendered by React
 
     return () => {
       if (overlayRef.current && map) {
@@ -151,7 +64,7 @@ const HeatmapDisplay = ({ locations, zoom }) => {
   // Return rectangles to be rendered by MapContainer
   if (!locations || locations.length === 0) return null;
 
-  // Grid size: ~55m at zoom 15, ~111m at zoom 14, ~222m at zoom 13 (street/neighborhood level)
+  // Grid size calculation
   const gridSize = 0.0005 * Math.pow(2, 15 - zoom);
   const grid = {};
 
@@ -169,22 +82,22 @@ const HeatmapDisplay = ({ locations, zoom }) => {
 
   return (
     <>
-      {Object.values(grid).map((cell) => {
+      {Object.values(grid).map((cell, idx) => {
         const total = cell.dangerous + cell.safe;
         const dangerRatio = cell.dangerous / total;
         
         let color, opacity;
         if (dangerRatio > 0.7) {
-          color = '#dc2626';
+          color = '#dc2626'; // Red
           opacity = 0.3 + dangerRatio * 0.4;
         } else if (dangerRatio > 0.4) {
-          color = '#f59e0b';
+          color = '#f59e0b'; // Orange
           opacity = 0.2 + dangerRatio * 0.3;
         } else if (dangerRatio > 0) {
-          color = '#eab308';
+          color = '#eab308'; // Yellow
           opacity = 0.15;
         } else {
-          color = '#22c55e';
+          color = '#22c55e'; // Green
           opacity = 0.25;
         }
 
@@ -195,7 +108,7 @@ const HeatmapDisplay = ({ locations, zoom }) => {
 
         return (
           <Rectangle
-            key={`${cell.lat}-${cell.lng}`}
+            key={`heat-${idx}`} // Fixed unique key
             bounds={bounds}
             pathOptions={{
               color: color,
@@ -204,7 +117,6 @@ const HeatmapDisplay = ({ locations, zoom }) => {
               fillColor: color,
               fillOpacity: opacity,
             }}
-            popup={`<strong>${cell.dangerous} Dangerous, ${cell.safe} Safe</strong>`}
           >
             <Popup>
               <div className="text-sm">
@@ -280,7 +192,7 @@ const PoliceDashboard = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'emergencies' }, (payload) => {
         fetchLiveIncidents();
         if (payload.eventType === 'INSERT') {
-           toast.error(`🚨 NEW SOS: ${payload.new.topic || payload.new.type}`, { position: "top-right", theme: "colored", icon: <Siren className="animate-pulse" /> });
+           console.log("New SOS Alert:", payload.new);
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'location_safety' }, (payload) => {
@@ -302,7 +214,6 @@ const PoliceDashboard = () => {
   const handleRespond = async () => {
     if (!selectedIncident) return;
     setIsResponding(true);
-    toast.info("Dispatch Unit En Route!", { icon: <Navigation className="animate-spin" /> });
     await supabase.from('emergencies').update({ status: 'dispatching' }).eq('id', selectedIncident.id);
     
     // Zoom out to show route
@@ -318,8 +229,6 @@ const PoliceDashboard = () => {
         const { error } = await supabase.from('emergencies').update({ status: 'resolved' }).eq('id', selectedIncident.id);
         
         if (!error) {
-            toast.success("Incident Resolved");
-            // Redirect to reports page as requested
             navigate('/police/reports'); 
         }
     }
@@ -330,11 +239,9 @@ const PoliceDashboard = () => {
     if (markingMode === mode) {
       setMarkingMode(null);
       setTempMarker(null);
-      toast.info("Marking mode disabled");
     } else {
       setMarkingMode(mode);
       setTempMarker(null);
-      toast.info(`Click on map to mark ${mode === 'dangerous' ? 'dangerous' : 'safe'} location`);
     }
   };
 
@@ -353,28 +260,23 @@ const PoliceDashboard = () => {
     }]);
     
     if (!error) {
-      toast.success(`Location marked as ${markingMode}`);
       setTempMarker(null);
       setMarkingMode(null);
     } else {
-      toast.error("Failed to mark location");
+      console.error("Failed to mark location");
     }
   };
 
   const handleRemoveLocation = async (locationId) => {
     const { error } = await supabase.from('location_safety').delete().eq('id', locationId);
     
-    if (!error) {
-      toast.success("Location removed");
-    } else {
-      toast.error("Failed to remove location");
+    if (error) {
+      console.error("Failed to remove location");
     }
   };
 
   return (
     <div className="h-full w-full flex flex-col lg:flex-row relative">
-      <ToastContainer limit={3} />
-
       {/* MAP AREA */}
       <div className="flex-1 relative z-0">
          <MapContainer center={mapCenter} zoom={zoomLevel} style={{ height: "100%", width: "100%" }} zoomControl={false}>
@@ -403,7 +305,6 @@ const PoliceDashboard = () => {
                   fillOpacity: 0.6,
                   weight: 2,
                 }}
-                popup={`<div class="text-center"><strong>${loc.type === 'dangerous' ? '⚠️ Dangerous Zone' : '✅ Safe Zone'}</strong><br/>${new Date(loc.marked_at).toLocaleDateString()}</div>`}
               >
                 <Popup>
                   <div className="text-center">
@@ -440,6 +341,7 @@ const PoliceDashboard = () => {
          </MapContainer>
          
          {/* Map Legend */}
+         {/* FIXED: Z-INDEX 500 (Higher than map layers, Lower than sidebar) */}
          <div className="absolute top-4 left-4 z-[500] bg-white/90 backdrop-blur border border-slate-200 p-3 rounded-lg shadow-sm flex flex-col gap-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-600"><div className="w-2.5 h-2.5 bg-blue-600 rounded-full border border-white shadow"></div>Your Unit</div>
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-600"><div className="w-2.5 h-2.5 bg-red-600 rounded-full border border-white shadow"></div>Active Incident</div>
@@ -448,6 +350,7 @@ const PoliceDashboard = () => {
          </div>
          
          {/* Marking Controls */}
+         {/* FIXED: Z-INDEX 500 */}
          <div className="absolute bottom-4 right-4 z-[500] flex gap-2">
             <button
               onClick={() => handleMarkingModeToggle('dangerous')}
@@ -485,8 +388,9 @@ const PoliceDashboard = () => {
          </div>
       </div>
 
-      {/* DETAIL SIDEBAR (Overlaid or Side-by-side depending on screen) */}
-      <div className="w-full lg:w-[400px] bg-white border-l border-slate-200 flex flex-col h-[50vh] lg:h-full overflow-hidden shadow-xl z-10">
+      {/* DETAIL SIDEBAR */}
+      {/* FIXED: Z-INDEX 1000 (Always highest) */}
+      <div className="w-full lg:w-[400px] bg-white border-l border-slate-200 flex flex-col h-[50vh] lg:h-full overflow-hidden shadow-xl z-[1000]">
         {!selectedIncident ? (
           /* LIST VIEW */
           <>
