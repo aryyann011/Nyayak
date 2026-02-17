@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { supabase } from "../lib/supabase"; 
-import { Mail, Lock, User, Phone, Shield, Briefcase, ArrowRight, Upload, Loader2, FileText, Building2, AlertTriangle, AlertCircle } from "lucide-react";
+import { Mail, Lock, User, Phone, Shield, Briefcase, ArrowRight, Upload, Loader2, FileText, Building2, AlertTriangle, AlertCircle, Scale } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import justiceBg from "../assets/justice-bg.jpg";
@@ -15,8 +15,9 @@ const SignupPage = () => {
     
     const navigate = useNavigate();
     
+    // Validating onBlur as per your code
     const { register, handleSubmit, formState: { errors } } = useForm({
-        mode: "onBlur" // Validate on blur
+        mode: "onBlur" 
     });
 
     const uploadIdProof = async (userId, file) => {
@@ -104,19 +105,80 @@ const SignupPage = () => {
 
     return (
         <div className="min-h-screen w-full flex bg-[#FFFAF0] font-sans">
-            {/* LEFT SIDE: BRANDING */}
+            
+            {/* --- LEFT SIDE: LOGIN PAGE UI (ANIMATIONS & LAYOUT) WITH SIGNUP TEXT --- */}
             <div className="hidden lg:flex w-1/2 relative flex-col justify-between p-16 overflow-hidden">
-                <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${justiceBg})` }} />
-                <div className="absolute inset-0 bg-gradient-to-b from-[#0B1120]/90 to-[#0B1120]/95"></div>
-                <div className="relative z-10 mt-10">
-                    <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
-                        Join the <span className="text-orange-500">Network</span>
-                    </h1>
-                    <p className="text-slate-300 text-lg max-w-md">Create an account to access legal aid, file complaints, or manage cases securely.</p>
+                <motion.div
+                    initial={{ scale: 1.15, opacity: 0 }}
+                    animate={{ scale: 1.05, opacity: 1 }}
+                    transition={{ duration: 2.5, ease: "easeOut" }}
+                    className="absolute inset-0 bg-cover bg-[center_top]"
+                    style={{ backgroundImage: `url(${justiceBg})` }}
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-b from-[#0B1120]/95 via-[#0B1120]/80 to-[#0B1120]/95"></div>
+
+                <motion.div 
+                    animate={{ x: [-600, 1200], opacity: [0, 0.2, 0] }}
+                    transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12"
+                />
+
+                <div className="relative z-10">
+                    <motion.div
+                        initial={{ y: -20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="flex items-center gap-3 mb-12"
+                    >
+                        <div className="p-3 bg-orange-500/20 rounded-xl backdrop-blur-md border border-orange-500/30">
+                            <Scale className="w-8 h-8 text-orange-500" />
+                        </div>
+                        <span className="text-2xl font-black text-white tracking-tighter">NYAYA<span className="text-orange-500">SAHAYAK</span></span>
+                    </motion.div>
+
+                    <motion.h1 
+                        initial={{ y: 30, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="text-6xl font-extrabold text-white mb-8 leading-[1.1] tracking-tight"
+                    >
+                        Bridging Citizens, <br />
+                        <motion.span 
+                            initial={{ backgroundPosition: '-200% 0' }}
+                            animate={{ backgroundPosition: '200% 0' }}
+                            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                            className="text-orange-500 bg-gradient-to-r from-orange-500 via-white/80 to-orange-500 bg-[length:200%_auto] bg-clip-text text-transparent"
+                        >
+                            To Justice.
+                        </motion.span>
+                    </motion.h1>
+
+                    <motion.div
+                        initial={{ x: -30, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.4 }}
+                        className="relative pl-6 border-l-2 border-orange-500/50"
+                    >
+                        <p className="text-slate-400 text-xl max-w-md leading-relaxed font-light italic">
+                            Secure identity verification ensures that only authorized personnel handle sensitive legal data.
+                        </p>
+                    </motion.div>
                 </div>
+
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                    className="relative z-10"
+                >
+                    <blockquote className="text-slate-500 text-sm tracking-[0.3em] uppercase font-bold flex items-center gap-4">
+                        <div className="h-px w-8 bg-slate-800"></div>
+                        "Satyameva Jayate"
+                    </blockquote>
+                </motion.div>
             </div>
 
-            {/* RIGHT SIDE: FORM */}
+            {/* --- RIGHT SIDE: FORM (EXACTLY AS PROVIDED) --- */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 overflow-y-auto">
                 <div className="w-full max-w-lg space-y-6">
                     <div>
