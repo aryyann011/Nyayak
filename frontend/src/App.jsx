@@ -53,6 +53,7 @@ import AdminUserDetails from "./pages/Admin/AdminUserDetails";
 import DraftingTool from "./pages/lawyer/DraftingTool";
 import HowItWorks from "./pages/HowItWorks";
 import CitizenCrimeMap from "./pages/citizen/CitizenCrimeMap";
+import ScrollToTop from "./components/ScrollToTop";
 
 function App() {
   return (
@@ -60,6 +61,7 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
         <NotificationProvider>
+          <ScrollToTop/>
           <Routes>
 
             {/* ================= PUBLIC ROUTES ================= */}
