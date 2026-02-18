@@ -86,7 +86,7 @@ const AIFeatureCard = ({ isDark }) => {
         timeout = setTimeout(() => {
           setMessages([WELCOME_MSG]);
           setCurrentStep(0);
-        }, 4000);
+        }, 2000);
         return;
       }
 

@@ -83,7 +83,7 @@ const LandingPage = () => {
               Trusted by Public Safety Departments
             </p>
 
-            <div className="flex flex-wrap justify-center items-center gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+            <div className="flex flex-wrap justify-center items-center gap-16 opacity-60 hover:grayscale-0 transition-all duration-500">
               <div className="flex flex-col items-center">
                 <img src="/delhi.png" alt="Delhi Police" className="h-16 mb-2" />
                 <span className="font-serif font-bold text-2xl">Delhi Police</span>
