@@ -17,7 +17,8 @@ import { useAuth } from "../context/Authcontext";
 
 const CITIZEN_LINKS = [
   { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
-  { icon: FilePlus, label: "File Complaint", path: "/complaint" },
+  {icon : FileText, label: "File Complaint", path:"/file-FIR"},
+  { icon: FilePlus, label: "Find Lawyer", path: "/complaint" },
   { icon: FileText, label: "My Cases", path: "/cases" },
   { icon: Map, label: "Safety Map", path: "/map" },
   { icon: MessageSquare, label: "Legal Assistant", path: "/chat" },

@@ -54,6 +54,9 @@ import DraftingTool from "./pages/lawyer/DraftingTool";
 import HowItWorks from "./pages/HowItWorks";
 import CitizenCrimeMap from "./pages/citizen/CitizenCrimeMap";
 import ScrollToTop from "./components/ScrollToTop";
+import FIRManagement from "./pages/police/FIRmanagement";
+import FIRDetail from "./pages/police/FIRdetails";
+import FileFIR from "./pages/citizen/FileFIR";
 
 function App() {
   return (
@@ -99,6 +102,8 @@ function App() {
               <Route path="/police-dashboard" element={<PoliceDashboard />} />
               <Route path="/police/reports" element={<IncidentReports/>} />
               <Route path="/police/profile" element={<PoliceProfile/>} />
+              <Route path="/police/firs" element={<FIRManagement />} />
+              <Route path="/police/fir/:id" element={<FIRDetail />} />
               {/* Add other police pages here later */}
             </Route>
 
@@ -138,7 +143,7 @@ function App() {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/map" element={<CitizenCrimeMap isPageMode={true} />} />
+              <Route path="/map" element={<CitizenCrimeMap isPageMode={true}/>} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/complaint" element={<ComplaintPage/>} />
               <Route path="/emergency-logs" element={<EmergencyLogs/>} />
@@ -146,7 +151,7 @@ function App() {
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment" element={<PaymentPage />} />
               <Route path="/cases" element={<MyCases />} />
-
+              <Route path="/file-FIR" element={<FileFIR/>} />
               <Route path="/cases/:id" element={<CaseDetails />} />
               <Route path="/case-drafts" element={<CaseDrafts/>} />
               {/* <Route path="/" */}

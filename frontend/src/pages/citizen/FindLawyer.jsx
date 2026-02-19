@@ -6,13 +6,13 @@ import {
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useNotification } from "../../context/NotificationContext";
-import { toast } from "react-toastify"; // Added for visual feedback
 
 const FindLawyer = () => {
   const locationState = useLocation().state;
-  const { sendNotification } = useNotification();
+  const { sendNotification, triggerToast } = useNotification(); // Added triggerToast here
   const navigate = useNavigate();
-  const caseId = locationState?.caseId; 
+  // We check for caseId OR attachCaseId (which we send from CaseDetails)
+  const caseId = locationState?.caseId || locationState?.attachCaseId; 
 
   const [lawyers, setLawyers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,21 +46,21 @@ const FindLawyer = () => {
   }, [selectedFilter]);
 
   // --- HIRE LOGIC ---
-  const handleHireRequest = async (lawyerId) => {
+  const handleHireRequest = async (lawyer) => {
     if (!caseId) {
-      toast.warn("No active case found. Please file a complaint first.");
-      navigate('/file-complaint');
+      triggerToast("Action Required", "No active case found. Please file a complaint first.", "error");
+      navigate('/complaint');
       return;
     }
 
-    setRequestingId(lawyerId);
+    setRequestingId(lawyer.id);
 
     try {
       // 1. Assign Lawyer ID & Update Status in DB
       const { error } = await supabase
         .from('cases')
         .update({ 
-          lawyer_id: lawyerId, 
+          lawyer_id: lawyer.id, 
           status: 'Pending Acceptance' 
         })
         .eq('id', caseId);
@@ -69,20 +69,20 @@ const FindLawyer = () => {
 
       // 2. Notify the Lawyer (Realtime Popup)
       await sendNotification(
-         lawyerId, 
+         lawyer.id, 
          "New Case Request", 
          "A citizen has requested your legal representation.", 
          "info",
          "/lawyer/requests"
       );
 
-      // 3. Feedback for You (Toast)
-      toast.success("Request Sent! The lawyer has been notified.");
-      navigate('/cases'); // Redirect to My Cases
+      // 3. Custom Feedback for Citizen & Redirect
+      triggerToast("Request Sent", `Your request has been securely sent to ${lawyer.name}.`, "success");
+      navigate('/cases'); 
 
     } catch (err) {
       console.error("Hire Error:", err);
-      toast.error("Failed to send request. Please check your connection.");
+      triggerToast("Request Failed", "Failed to send request. Please check your connection.", "error");
     } finally {
       setRequestingId(null);
     }
@@ -194,7 +194,8 @@ const FindLawyer = () => {
                       View Profile
                     </button>
                     <button 
-                      onClick={() => handleHireRequest(lawyer.id)}
+                      // Pass the entire lawyer object to use the name in the toast
+                      onClick={() => handleHireRequest(lawyer)}
                       disabled={requestingId === lawyer.id}
                       className="bg-slate-900 text-white px-6 py-2 text-[11px] font-bold uppercase tracking-widest hover:bg-black transition-all flex items-center gap-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
                     >
