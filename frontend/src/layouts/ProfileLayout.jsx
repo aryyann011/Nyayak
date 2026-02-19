@@ -2,8 +2,10 @@ import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import DashboardNavbar from "../components/DashboardNavbar"; // ✅ UPDATED IMPORT
 import { User, Shield, Key, Bell, ArrowLeft } from "lucide-react";
+import { useAuth } from "../context/Authcontext";
 
 const ProfileLayout = () => {
+  const {user} = useAuth()
   const menuItems = [
     { icon: User, label: "Edit Profile", path: "/profile" },
     { icon: Shield, label: "Security", path: "/profile/security" },
@@ -17,7 +19,8 @@ const ProfileLayout = () => {
       {/* 1. SETTINGS SIDEBAR */}
       <aside className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-[#111827] border-r border-gray-200 dark:border-gray-800 z-50 flex flex-col">
         <div className="h-20 flex items-center px-6 border-b border-gray-100 dark:border-gray-800">
-          <NavLink to="/dashboard" className="flex items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors">
+          <NavLink to={user.user_metadata?.role === "citizen" ? "/dashboard"  : "/lawyer/legal-dashboard"}
+          lassName="flex items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors">
             <ArrowLeft className="w-5 h-5" />
             <span className="font-bold text-sm uppercase tracking-wide">Back to App</span>
           </NavLink>
