@@ -102,7 +102,7 @@ function App() {
               <Route path="/police-dashboard" element={<PoliceDashboard />} />
               <Route path="/police/reports" element={<IncidentReports/>} />
               <Route path="/police/profile" element={<PoliceProfile/>} />
-              <Route path="/police/fir" element={<FIRManagement />} />
+              <Route path="/police/firs" element={<FIRManagement />} />
               <Route path="/police/fir/:id" element={<FIRDetail />} />
               {/* Add other police pages here later */}
             </Route>

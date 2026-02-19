@@ -23,51 +23,47 @@ const FileFIR = () => {
     setLoading(true);
 
     try {
-      // 1. (Optional but Recommended) Auto-find a Police Officer ID
-      // If you have a specific Demo Police ID, you can skip this step and hardcode it below.
+      // 1. Safely find the Demo Police ID
       const { data: policeUsers, error: policeError } = await supabase
         .from('profiles')
         .select('id')
         .eq('role', 'police')
         .limit(1);
 
-      if (policeError) throw new Error("Failed to locate a police station.");
-      if (!policeUsers || policeUsers.length === 0) throw new Error("No police units available to receive FIRs right now.");
-      
-      const assignedPoliceId = policeUsers[0].id;
+      if (policeError) throw new Error("Internal routing error");
+      const assignedPoliceId = policeUsers?.length > 0 ? policeUsers[0].id : null;
 
-      // 2. Insert the Case
-      const { data, error } = await supabase.from('cases').insert([{
+      // 2. Insert the Case using the PROPER column (assigned_police_id)
+      const { error } = await supabase.from('cases').insert([{
         user_id: user.id,
         title: formData.title,
         description: formData.description,
         incident_date: formData.incident_date, 
         location: formData.location,           
         case_type: "Criminal",
-        category: "Criminal",                  
+        category: "Police Complaint",                  
         complaint_type: 'police_fir',          
         police_status: 'Pending',              
         status: 'Awaiting Police Review',
-        // --- THIS IS THE FIX ---
-        // We use the existing lawyer_id column to assign it to the Police Officer for now.
-        lawyer_id: assignedPoliceId 
-      }]).select();
+        assigned_police_id: assignedPoliceId // Safely routes without breaking foreign keys
+      }]);
 
-      if (error) throw error;
+      if (error) throw error; // Throws to the catch block below
 
       triggerToast("FIR Submitted", "Your request has been sent to the nearest police station.", "success");
       navigate("/cases");
 
     } catch (error) {
-      console.error(error);
-      triggerToast("Submission Failed", error.message || "Please try again later.", "error");
+      // SECURE ERROR HANDLING: Log the real error for developers, show safe error to users.
+      console.error("FIR Submission Error:", error);
+      triggerToast("Submission Failed", "We could not process your complaint at this time. Please try again.", "error");
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 font-sans pb-10">
-      {/* Header */}
       <div className="bg-gradient-to-br from-orange-50 to-white dark:from-[#111827] dark:to-[#1F2937] p-8 md:p-10 rounded-[32px] border border-orange-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10">
           <ShieldAlert size={120} />
@@ -85,7 +81,6 @@ const FileFIR = () => {
         </div>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm p-8 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
