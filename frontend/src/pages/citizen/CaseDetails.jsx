@@ -335,7 +335,7 @@ export default function CaseDetails() {
                    Legal Retainer Fee
                  </h3>
                  <p className="text-4xl font-bold mt-2 font-serif-heading">
-                   {caseData.lawyers ? `₹${caseData.lawyers.hourly_rate}` : "—"}
+                   {caseData.lawyers ? `${caseData.lawyers.hourly_rate}` : "—"}
                  </p>
               </div>
               
