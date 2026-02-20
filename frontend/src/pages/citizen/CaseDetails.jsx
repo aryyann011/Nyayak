@@ -2,15 +2,18 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Clock, User, CreditCard, ArrowRight, CheckCircle, 
-  FileText, Shield, AlertCircle, Loader2, Calendar, MapPin, Download, Briefcase, Scale, Building2
+  FileText, Shield, AlertCircle, Loader2, Calendar, MapPin, Download, Briefcase, Scale, Building2, Upload
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { useNotification } from "../../context/NotificationContext"; // Added for toasts/notifications
 
 export default function CaseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { triggerToast, sendNotification } = useNotification(); // Initialize notifications
   const [caseData, setCaseData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false); // Track upload state
 
   useEffect(() => {
     // 1. Validate ID before fetching
@@ -39,6 +42,62 @@ export default function CaseDetails() {
 
     return () => { supabase.removeChannel(channel); };
   }, [id]);
+
+  // --- CITIZEN EVIDENCE UPLOAD LOGIC ---
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      // 1. Upload to Supabase Storage (organized in a citizen_evidence folder)
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `citizen_evidence/${caseData.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      // 3. Update 'documents' array in DB (Appending to existing evidence)
+      const currentDocs = caseData.documents || [];
+      const updatedDocs = [...currentDocs, publicUrl];
+
+      const { error: dbError } = await supabase
+        .from('cases')
+        .update({ documents: updatedDocs })
+        .eq('id', id);
+
+      if (dbError) throw dbError;
+
+      // 4. Update UI & Notify (If lawyer is assigned, notify them!)
+      setCaseData(prev => ({ ...prev, documents: updatedDocs }));
+      
+      if (caseData.lawyer_id) {
+          await sendNotification(
+             caseData.lawyer_id,
+             "New Evidence Uploaded",
+             "Your client has attached new evidence to their case file.",
+             "info",
+             `/lawyer/cases/${id}`
+          );
+      }
+
+      triggerToast("Upload Successful", "Evidence added to your official case file.", "success");
+    } catch (error) {
+      console.error("Upload error:", error);
+      triggerToast("Upload Failed", "Could not upload the document. Please try again.", "error");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // --- LOADING STATE ---
   if (loading) return (
@@ -152,9 +211,20 @@ export default function CaseDetails() {
               </p>
               
               <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
-                 <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 mb-4 uppercase tracking-widest flex items-center gap-2">
-                    <Download className="w-4 h-4" /> Attached Evidence
-                 </h3>
+                 
+                 {/* EVIDENCE HEADER WITH NEW UPLOAD BUTTON */}
+                 <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <Download className="w-4 h-4" /> Attached Evidence
+                    </h3>
+                    
+                    <label className={`cursor-pointer text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                        {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                        {uploading ? 'Uploading...' : '+ Add Evidence'}
+                        <input type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.jpg,.png" />
+                    </label>
+                 </div>
+
                  {!caseData.documents || caseData.documents.length === 0 ? (
                     <span className="text-sm text-slate-500 dark:text-slate-400 italic">No evidentiary documents uploaded.</span>
                  ) : (
@@ -169,9 +239,34 @@ export default function CaseDetails() {
               </div>
             </div>
 
+            {/* NEW: Official Police Reports (Only shows if Police uploaded something) */}
+            {isFIR && caseData.police_documents && caseData.police_documents.length > 0 && (
+                <div className="bg-gradient-to-br from-slate-50 to-white dark:from-slate-800/50 dark:to-[#111827] border border-slate-200 dark:border-slate-700 p-6 md:p-8 rounded-3xl shadow-sm relative overflow-hidden mt-6">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-slate-500"></div>
+                    <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <Shield className="w-4 h-4" /> Official Police Reports
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {caseData.police_documents.map((doc, i) => (
+                            <a key={i} href={doc} target="_blank" rel="noreferrer" className="flex items-center justify-between p-4 bg-white dark:bg-[#1F2937] border border-slate-200 dark:border-slate-700 rounded-xl hover:border-slate-400 dark:hover:border-slate-500 transition-all shadow-sm group">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg flex items-center justify-center">
+                                        <FileText className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                                        Official_Report_v{i+1}.pdf
+                                    </div>
+                                </div>
+                                <Download className="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* NEW: Documents Prepared by Counsel (Only shows if ACTIVE and documents exist) */}
             {caseData.status === 'Active' && caseData.lawyer_documents && caseData.lawyer_documents.length > 0 && (
-                <div className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/10 dark:to-[#111827] border border-blue-200 dark:border-blue-900/30 p-6 md:p-8 rounded-3xl shadow-sm relative overflow-hidden">
+                <div className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/10 dark:to-[#111827] border border-blue-200 dark:border-blue-900/30 p-6 md:p-8 rounded-3xl shadow-sm relative overflow-hidden mt-6">
                     <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
                     <h3 className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-6 flex items-center gap-2">
                         <Scale className="w-4 h-4" /> Documents Prepared by Counsel

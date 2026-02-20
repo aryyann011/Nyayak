@@ -187,38 +187,67 @@ const ActiveCaseDetails = () => {
                 </div>
              </div>
 
-             {/* Documents Area - UPDATED WITH UPLOAD UI */}
+             {/* --- NEW: CLIENT EVIDENCE DISPLAY --- */}
              <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+                <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                  <Paperclip className="w-5 h-5 text-slate-400"/> Client Evidence & Attachments
+                </h3>
+                {!caseData.documents || caseData.documents.length === 0 ? (
+                    <div className="p-8 border border-dashed border-slate-200 rounded-xl text-center bg-slate-50">
+                      <p className="text-slate-500 font-medium text-sm italic">No evidence attached by the client.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {caseData.documents.map((docUrl, index) => (
+                            <a key={index} href={docUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow-sm transition-all group">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className="w-10 h-10 bg-white border border-slate-200 text-slate-600 rounded-lg flex items-center justify-center shrink-0">
+                                        <FileText className="w-5 h-5" />
+                                    </div>
+                                    <div className="truncate">
+                                        <div className="text-sm font-bold text-slate-900 truncate">Evidence_{index + 1}</div>
+                                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Client Upload</div>
+                                    </div>
+                                </div>
+                                <Download className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
+                            </a>
+                        ))}
+                    </div>
+                )}
+             </div>
+
+             {/* Documents Area - LAWYER UPLOAD UI */}
+             <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-8 shadow-sm border border-blue-200">
                 <div className="flex justify-between items-center mb-6">
-                   <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                     <Paperclip className="w-5 h-5 text-slate-400"/> Case Documents
+                   <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
+                     <Shield className="w-5 h-5 text-blue-500"/> Legal Workspace (Your Drafts)
                    </h3>
                    
                    {/* File Input hidden behind label */}
-                   <label className={`cursor-pointer text-sm font-bold text-blue-600 hover:underline flex items-center gap-2 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                   <label className={`cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors hover:bg-blue-700 shadow-sm ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                     {uploading ? 'Uploading...' : '+ Upload New'}
+                     {uploading ? 'Uploading...' : 'Upload Draft'}
                      <input type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx" />
                    </label>
                 </div>
 
                 {/* Show Empty State OR Document List */}
                 {!caseData.lawyer_documents || caseData.lawyer_documents.length === 0 ? (
-                    <div className="p-10 border-2 border-dashed border-slate-200 rounded-xl text-center bg-slate-50">
-                      <FileText className="w-10 h-10 text-slate-300 mx-auto mb-3"/>
-                      <p className="text-slate-500 font-medium text-sm">No legal documents attached to this case file yet.</p>
+                    <div className="p-10 border border-dashed border-blue-200 rounded-xl text-center bg-white/50">
+                      <FileText className="w-10 h-10 text-blue-300 mx-auto mb-3"/>
+                      <p className="text-slate-500 font-medium text-sm">No legal documents prepared by you yet.</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {caseData.lawyer_documents.map((docUrl, index) => (
-                            <div key={index} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-slate-300 transition-all">
+                            <div key={index} className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-white border border-slate-200 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                                    <div className="w-10 h-10 bg-blue-50 border border-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
                                         <FileText className="w-5 h-5" />
                                     </div>
                                     <div>
                                         <div className="text-sm font-bold text-slate-900">Legal_Draft_v{index + 1}.pdf</div>
-                                        <div className="text-xs text-emerald-600 font-medium">Shared with Client</div>
+                                        <div className="text-xs text-emerald-600 font-bold uppercase tracking-wider">Shared with Client</div>
                                     </div>
                                 </div>
                                 <a href={docUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors">

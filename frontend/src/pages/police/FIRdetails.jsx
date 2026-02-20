@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useNotification } from "../../context/NotificationContext"; 
-import { ArrowLeft, CheckCircle, FileWarning, XCircle, Loader2, FileText } from "lucide-react";
+import { ArrowLeft, CheckCircle, FileWarning, XCircle, Loader2, FileText, Upload, Download, Shield, Paperclip } from "lucide-react";
 
 const FIRDetail = () => {
   const { id } = useParams();
@@ -12,6 +12,7 @@ const FIRDetail = () => {
   const [caseData, setCaseData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [uploading, setUploading] = useState(false); // New Upload State
 
   useEffect(() => {
     const fetchCase = async () => {
@@ -48,7 +49,6 @@ const FIRDetail = () => {
     }
 
     try {
-      // 1. UPDATE DATABASE (With .select() to force a return value validation)
       const { data: updatedRow, error: updateError } = await supabase
         .from('cases')
         .update({
@@ -60,12 +60,12 @@ const FIRDetail = () => {
 
       if (updateError) throw updateError;
       
-      // CRITICAL CHECK: If RLS blocked the update, updatedRow will be empty
       if (!updatedRow || updatedRow.length === 0) {
           throw new Error("Update blocked by database security (RLS). Please check table policies.");
       }
 
-      // 2. SAFE NOTIFICATION
+      setCaseData(prev => ({ ...prev, police_status: decision, status: newMainStatus }));
+
       try {
           await sendNotification(
             caseData.user_id, 
@@ -79,13 +79,66 @@ const FIRDetail = () => {
       }
 
       triggerToast("Case Updated", `Complaint marked as ${decision}`, "success");
-      navigate('/police/firs'); 
 
     } catch (error) {
       console.error(error);
       triggerToast("Update Failed", error.message || "Could not update case.", "error");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // --- POLICE FILE UPLOAD LOGIC ---
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      // 1. Upload to the same 'documents' bucket, but under a 'police_docs' folder
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `police_docs/${caseData.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      // 3. Update 'police_documents' array in DB
+      const currentDocs = caseData.police_documents || [];
+      const updatedDocs = [...currentDocs, publicUrl];
+
+      const { error: dbError } = await supabase
+        .from('cases')
+        .update({ police_documents: updatedDocs })
+        .eq('id', id);
+
+      if (dbError) throw dbError;
+
+      // 4. Update UI & Notify Citizen
+      setCaseData(prev => ({ ...prev, police_documents: updatedDocs }));
+
+      await sendNotification(
+        caseData.user_id,
+        "Official Report Uploaded",
+        "Police have attached an official document to your case file.",
+        "info",
+        `/cases/${id}`
+      );
+
+      triggerToast("Document Uploaded", "The official report is now visible to the citizen.", "success");
+    } catch (error) {
+      console.error("Upload error:", error);
+      triggerToast("Upload Failed", "Could not upload the document.", "error");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -140,9 +193,71 @@ const FIRDetail = () => {
               {caseData.description}
             </div>
           </div>
+
+          {/* --- NEW: CITIZEN EVIDENCE SECTION --- */}
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Paperclip className="w-4 h-4 text-blue-500" /> Attached Evidence
+            </h3>
+            {!caseData.documents || caseData.documents.length === 0 ? (
+                <div className="text-slate-500 dark:text-slate-400 text-sm italic p-4 bg-slate-50 dark:bg-[#1F2937] rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                    No evidentiary documents uploaded by the complainant.
+                </div>
+            ) : (
+                <div className="flex flex-wrap gap-3">
+                   {caseData.documents.map((docUrl, i) => (
+                      <a key={i} href={docUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors shadow-sm">
+                         <FileText className="w-4 h-4 text-blue-500" /> Evidence_{i+1}.pdf
+                      </a>
+                   ))}
+                </div>
+            )}
+          </div>
         </div>
 
-        {/* PROFESSIONAL ACTION BAR (Only if Pending) */}
+        {/* --- OFFICIAL POLICE UPLOAD WORKSPACE --- */}
+        {caseData.police_status !== 'Pending' && (
+          <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-[#111827]">
+             <div className="flex items-center justify-between mb-6">
+                 <h3 className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                     <Shield className="w-4 h-4" /> Official Records Workspace
+                 </h3>
+                 
+                 <label className={`cursor-pointer bg-slate-900 hover:bg-black dark:bg-slate-700 dark:hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-sm ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                     {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                     {uploading ? 'Uploading...' : 'Upload Official Copy'}
+                     <input type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.jpg,.png" />
+                 </label>
+             </div>
+
+             {!caseData.police_documents || caseData.police_documents.length === 0 ? (
+                 <div className="text-center p-6 bg-white dark:bg-[#1F2937] rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-slate-400 text-sm font-medium">
+                     No official reports have been uploaded to this case file yet.
+                 </div>
+             ) : (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     {caseData.police_documents.map((docUrl, index) => (
+                         <div key={index} className="flex items-center justify-between p-4 bg-white dark:bg-[#1F2937] border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm">
+                             <div className="flex items-center gap-3">
+                                 <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg flex items-center justify-center shrink-0">
+                                     <FileText className="w-5 h-5" />
+                                 </div>
+                                 <div>
+                                     <div className="text-sm font-bold text-slate-700 dark:text-slate-200">Official_Report_v{index + 1}.pdf</div>
+                                     <div className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Visible to Citizen</div>
+                                 </div>
+                             </div>
+                             <a href={docUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                                 <Download className="w-5 h-5" />
+                             </a>
+                         </div>
+                     ))}
+                 </div>
+             )}
+          </div>
+        )}
+
+        {/* ACTION BAR (Only if Pending) */}
         {caseData.police_status === 'Pending' && (
           <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">
