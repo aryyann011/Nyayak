@@ -25,16 +25,13 @@ export default function PaymentSuccess() {
           <p className="text-slate-600">Your payment has been processed</p>
         </div>
 
-        {/* Details Card */}
-        <div className="bg-slate-50 rounded-lg border border-slate-200 p-6 mb-6">
+        <div id="payment-receipt" className="bg-slate-50 rounded-lg border border-slate-200 p-6 mb-6">
           
-          {/* Amount */}
           <div className="mb-6 pb-6 border-b border-slate-200">
             <p className="text-slate-600 text-sm mb-2">Amount Paid</p>
             <p className="text-3xl font-bold text-slate-900">₹ {String(amount).replace(/₹/g, '').toLocaleString()}</p>
           </div>
 
-          {/* Case Info */}
           <div className="space-y-4">
             <div>
               <p className="text-slate-600 text-sm mb-1">Case</p>
