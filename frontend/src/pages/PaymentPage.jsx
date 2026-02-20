@@ -54,47 +54,24 @@ export default function PaymentPage() {
     fetchDetails();
   }, [details.caseId, navigate]);
 
-  // --- HANDLE PAYMENT LOGIC ---
+  // --- HANDLE PAYMENT LOGIC (SHOWCASE/DEMO MODE) ---
   const handlePayment = async () => {
     setLoading(true);
     
-    // 1. Simulate Gateway
+    // Simulate payment processing delay
     await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // 2. Update Supabase
-    const { error } = await supabase
-        .from('cases')
-        .update({ 
-            status: 'Active', 
-            payment_status: 'paid',
-            payment_amount: details.amount
-        })
-        .eq('id', details.caseId);
 
     setLoading(false);
 
-    if (error) {
-        alert("Payment verification failed. Please try again.");
-    } else {
-        // 3. Notify the Lawyer
-        if (details.lawyerId) {
-            await sendNotification(
-                details.lawyerId,
-                "Retainer Received",
-                "Payment confirmed. The case is now Active.",
-                "success",
-                "/lawyer/cases"
-            );
-        }
-
-        // 4. Navigate to Success
-        navigate('/payment-success', { 
-            state: { 
-                transactionId: `TXN-${Math.floor(Math.random() * 1000000)}`,
-                amount: details.amount
-            } 
-        });
-    }
+    // Navigate to Success (Showcase mode - just show success message)
+    navigate('/payment-success', { 
+        state: { 
+            transactionId: `PAY-${Math.floor(Math.random() * 1000000)}`,
+            amount: details.amount,
+            caseTitle: details.caseTitle,
+            caseId: details.caseId
+        } 
+    });
   };
 
   return (
@@ -161,7 +138,7 @@ export default function PaymentPage() {
 
             <div className="mb-10 text-center">
               <span className="text-6xl font-black text-slate-900 tracking-tighter">
-                ₹{details.amount.toLocaleString()}
+                ₹ {String(details.amount).replace(/₹/g, '').toLocaleString()}
               </span>
               <p className="text-slate-400 font-medium mt-2 text-sm">One-time retainer fee</p>
             </div>
