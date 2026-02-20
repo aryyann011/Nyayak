@@ -161,7 +161,7 @@ const ActiveCaseDetails = () => {
                     <div className="p-2 bg-slate-100 rounded-full"><Phone className="w-4 h-4 text-slate-600"/></div>
                     <div>
                       <label className="text-xs font-bold text-slate-400 uppercase">Phone</label>
-                      <p className="text-slate-900 font-medium">{caseData.users?.phone_number || 'N/A'}</p>
+                      <p className="text-slate-900 font-medium">{caseData.users?.phone || 'N/A'}</p>
                     </div>
                   </div>
                 </div>

@@ -176,6 +176,8 @@ export default function Profile() {
   };
 
   // --- 3. SAVE DATA ---
+  // --- 3. SAVE DATA ---
+  // --- 3. SAVE DATA ---
   const onSubmit = async (values) => {
     setSaving(true);
     try {
@@ -183,13 +185,12 @@ export default function Profile() {
         id: user.id,
         full_name: values.full_name,
         phone: values.phone,
-        // email is usually read-only for auth reasons, but we can save it to profile text column
         aadhar_verified: values.aadhar_verified,
-        dob: values.dob,
+        // FIX: Send null if dob is an empty string
+        dob: values.dob ? values.dob : null, 
         gender: values.gender,
         address: values.address,
         home_station: values.home_station,
-        updated_at: new Date(),
       };
 
       const { error } = await supabase.from("profiles").upsert(updates);
