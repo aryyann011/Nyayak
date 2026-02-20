@@ -193,3 +193,19 @@ body {
   padding: 15px 40px;
   font-size: 18px;
 }
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #payment-receipt,
+  #payment-receipt * {
+    visibility: visible !important;
+  }
+  #payment-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
