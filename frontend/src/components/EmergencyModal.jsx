@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Siren, X, MapPin, AlertTriangle, Loader2, CheckCircle2, Crosshair, Type } from "lucide-react";
+import { Siren, X, MapPin, AlertTriangle, Loader2, CheckCircle2, Crosshair, Type, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/Authcontext";
@@ -10,23 +10,55 @@ const EmergencyModal = ({ isOpen, onClose }) => {
   const [type, setType] = useState("police"); 
   const [topic, setTopic] = useState(""); 
   const [description, setDescription] = useState(""); 
-  const [isSending, setIsSending] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
   
+  // Location States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchingLoc, setIsSearchingLoc] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [location, setLocation] = useState({ 
     lat: null, 
     lng: null, 
-    display: "Initializing..." 
+    display: "Location not set" 
   });
 
+  const [isSending, setIsSending] = useState(false);
   const navigate = useNavigate();
 
-  // --- ROBUST LOCATION DETECTION ---
+  // --- MANUAL SEARCH LOGIC (Geocoding) ---
+  const handleSearchLocation = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSearchingLoc(true);
+    setLocation(prev => ({ ...prev, display: "Searching..." }));
+
+    try {
+      // Using OpenStreetMap's free Nominatim API (restricted to India for better accuracy)
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=in&limit=1`);
+      const data = await res.json();
+
+      if (data && data.length > 0) {
+        setLocation({
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon),
+          display: data[0].display_name.split(',').slice(0, 3).join(', ') // Keep it concise
+        });
+      } else {
+        setLocation({ lat: null, lng: null, display: "Location not found in India." });
+      }
+    } catch (e) {
+      console.error("Geocoding failed:", e);
+      setLocation({ lat: null, lng: null, display: "Search failed. Try GPS." });
+    } finally {
+      setIsSearchingLoc(false);
+    }
+  };
+
+  // --- ROBUST GPS LOCATION DETECTION ---
   const detectLocation = async () => {
     setIsLocating(true);
+    setSearchQuery(""); // Clear search bar if using GPS
     setLocation(prev => ({ ...prev, display: "Triangulating signal..." }));
 
-    // 1. Helper to fetch via IP (Backup Method)
     const fetchIpLocation = async () => {
         try {
             const res = await fetch('https://ipapi.co/json/');
@@ -44,11 +76,9 @@ const EmergencyModal = ({ isOpen, onClose }) => {
         return null;
     };
 
-    // 2. Try Browser GPS first
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          // SUCCESS: GPS Locked
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           const acc = position.coords.accuracy;
@@ -56,32 +86,29 @@ const EmergencyModal = ({ isOpen, onClose }) => {
           setLocation({
             lat: lat,
             lng: lng,
-            display: `${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E (±${Math.round(acc)}m)`
+            display: `GPS: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E (±${Math.round(acc)}m)`
           });
           setIsLocating(false);
         },
         async (error) => {
-          // ERROR: GPS Failed/Blocked -> Try IP Fallback
           console.warn("GPS failed, switching to IP fallback...", error);
           const ipLoc = await fetchIpLocation();
           
           if (ipLoc) {
              setLocation(ipLoc);
           } else {
-             // FINAL FALLBACK: Default HQ
-             setLocation({ lat: 28.6139, lng: 77.2090, display: "GPS Failed. Using HQ Default." });
+             setLocation({ lat: 28.6139, lng: 77.2090, display: "GPS Failed. Defaulted to HQ." });
           }
           setIsLocating(false);
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 } // Reduced timeout to 5s
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
-       // NO GPS SUPPORT -> Try IP Fallback immediately
        const ipLoc = await fetchIpLocation();
        if (ipLoc) {
            setLocation(ipLoc);
        } else {
-           setLocation({ lat: 28.6139, lng: 77.2090, display: "Device not supported. Using HQ." });
+           setLocation({ lat: 28.6139, lng: 77.2090, display: "Device not supported. Defaulted to HQ." });
        }
        setIsLocating(false);
     }
@@ -93,7 +120,9 @@ const EmergencyModal = ({ isOpen, onClose }) => {
       setIsSending(false);
       setTopic(""); 
       setDescription("");
-      detectLocation(); // Auto-start detection
+      setSearchQuery("");
+      setLocation({ lat: null, lng: null, display: "Please set location" });
+      // We no longer auto-start detectLocation() to give them a choice
     }
   }, [isOpen]);
 
@@ -101,7 +130,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async () => {
     if (!location.lat) {
-      alert("Location is required. Please wait for detection or click 'Refetch'.");
+      alert("Location is required. Please search for an address or use current GPS.");
       return;
     }
     
@@ -173,27 +202,56 @@ const EmergencyModal = ({ isOpen, onClose }) => {
           {step === 1 ? (
             <div className="space-y-6">
                
-               {/* LOCATION DISPLAY */}
-               <div className="space-y-2">
-                 <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Current Location</label>
+               {/* LOCATION SELECTOR */}
+               <div className="space-y-3">
+                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                   Incident Location <span className="text-red-500">*</span>
+                 </label>
+                 
+                 {/* Search Bar */}
+                 <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <MapPin className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <input 
+                            type="text" 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}
+                            placeholder="Enter specific address or city..."
+                            className="w-full pl-9 p-3 text-sm rounded-md border focus:outline-none focus:ring-2 transition-all border-slate-200 focus:ring-slate-900/10 focus:border-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-slate-500"
+                        />
+                    </div>
+                    <button 
+                        onClick={handleSearchLocation}
+                        disabled={isSearchingLoc || !searchQuery.trim()}
+                        className="px-4 bg-slate-900 text-white rounded-md hover:bg-black transition-colors disabled:opacity-50 flex items-center justify-center dark:bg-slate-700 dark:hover:bg-slate-600"
+                    >
+                        {isSearchingLoc ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    </button>
+                 </div>
+
+                 {/* OR Separator */}
+                 <div className="relative flex items-center py-1">
+                    <div className="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+                    <span className="flex-shrink-0 mx-4 text-xs font-medium text-slate-400">OR</span>
+                    <div className="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
+                 </div>
+
+                 {/* GPS Button & Current Status */}
+                 <div className="flex items-center justify-between gap-3 p-3 rounded-md border bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-700">
+                    <span className={`text-sm font-medium font-mono truncate ${location.lat ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                      {location.display}
+                    </span>
                     <button 
                       onClick={detectLocation}
                       disabled={isLocating}
-                      className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
+                      className="shrink-0 flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
                     >
                       {isLocating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Crosshair className="w-3 h-3" />}
-                      {isLocating ? "Locating..." : "Refetch"}
+                      Use My GPS
                     </button>
-                 </div>
-                 
-                 <div className={`flex items-center gap-3 p-3 rounded-md border transition-all
-                   ${isLocating ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300"}
-                 `}>
-                    <MapPin className={`w-4 h-4 ${isLocating ? "animate-bounce" : ""}`} />
-                    <span className="text-sm font-medium font-mono truncate">
-                      {location.display}
-                    </span>
                  </div>
                </div>
 
@@ -227,7 +285,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
                {/* TOPIC INPUT */}
                <div className="space-y-2">
                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                   Specific Topic <span className="text-red-500">*</span>
+                   Specific Topic
                  </label>
                  <div className="relative">
                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -238,10 +296,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
                      value={topic} 
                      onChange={(e) => setTopic(e.target.value)}
                      placeholder={type === 'police' ? "e.g. Armed Robbery, Kidnapping..." : "e.g. Heart Attack, Accident..."} 
-                     className="w-full pl-10 p-3 text-sm rounded-md border focus:outline-none focus:ring-2 transition-all
-                       border-slate-200 focus:ring-slate-900/10 focus:border-slate-400
-                       dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-slate-500
-                     "
+                     className="w-full pl-10 p-3 text-sm rounded-md border focus:outline-none focus:ring-2 transition-all border-slate-200 focus:ring-slate-900/10 focus:border-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-slate-500"
                    />
                  </div>
                </div>
@@ -254,10 +309,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
                    value={description} 
                    onChange={(e) => setDescription(e.target.value)}
                    placeholder="e.g. Intruder in house, 2 men armed..." 
-                   className="w-full p-3 text-sm rounded-md border focus:outline-none focus:ring-2 transition-all
-                     border-slate-200 focus:ring-slate-900/10 focus:border-slate-400
-                     dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-slate-500
-                   "
+                   className="w-full p-3 text-sm rounded-md border focus:outline-none focus:ring-2 transition-all border-slate-200 focus:ring-slate-900/10 focus:border-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-slate-500"
                  />
                </div>
 
@@ -265,7 +317,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
                <div className="pt-2">
                  <button 
                    onClick={handleSubmit}
-                   disabled={isSending || isLocating} 
+                   disabled={isSending || isLocating || isSearchingLoc || !location.lat} 
                    className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                  >
                    {isSending ? <><Loader2 className="w-4 h-4 animate-spin" /> Transmitting...</> : "Confirm & Dispatch"}
@@ -280,7 +332,7 @@ const EmergencyModal = ({ isOpen, onClose }) => {
                   <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
                </div>
                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Alert Registered</h3>
-               <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Dispatch units have been notified.</p>
+               <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Dispatch units have been notified at the specified location.</p>
             </div>
           )}
         </div>
